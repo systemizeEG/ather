@@ -1,0 +1,14 @@
+<svg width="400" height="120" viewBox="0 0 400 120" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="purple-x" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#bf24ff" />
+      <stop offset="100%" stop-color="#7a00ff" />
+    </linearGradient>
+  </defs>
+  
+  <text x="0" y="75" font-family="system-ui, -apple-system, sans-serif" font-weight="900" font-size="70" fill="#ffffff" letter-spacing="-3">Mart</text>
+  
+  <text x="156" y="75" font-family="system-ui, -apple-system, sans-serif" font-weight="900" font-size="82" fill="url(#purple-x)">X</text>
+  
+  <text x="4" y="105" font-family="system-ui, -apple-system, sans-serif" font-weight="800" font-size="16" fill="#ffffff" letter-spacing="0.2">Marketing &amp; Creative Studio</text>
+</svg>
