@@ -1,106 +1,113 @@
 import { prisma } from "@/lib/prisma";
-import { DollarSign, ShoppingCart, ShoppingBag, Users, Clock, AlertCircle } from "lucide-react";
+import { DollarSign, ShoppingCart, ShoppingBag, Clock, Plus, Tags, ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { FadeIn } from "@/components/ui/MotionWrapper";
+import { AdminPageHeader, AdminPanel } from "@/components/admin/AdminPageHeader";
+import { Button } from "@/components/ui/Button";
 
 export default async function AdminDashboardPage() {
-  // Fetch stats concurrently
-  const [
-    totalOrders,
-    totalRevenueResult,
-    totalProducts,
-    pendingOrders
-  ] = await Promise.all([
-    prisma.order.count(),
-    prisma.order.aggregate({
-      _sum: { total: true },
-      where: { status: "COMPLETED" } // Only count completed for revenue
-    }),
-    prisma.product.count(),
-    prisma.order.findMany({
-      where: { status: "PENDING_REVIEW" },
-      orderBy: { createdAt: "desc" },
-      take: 5
-    })
-  ]);
+  const [totalOrders, totalRevenueResult, totalProducts, pendingCount, pendingOrders, categoryCount] =
+    await Promise.all([
+      prisma.order.count(),
+      prisma.order.aggregate({
+        _sum: { total: true },
+        where: { status: "COMPLETED" },
+      }),
+      prisma.product.count(),
+      prisma.order.count({ where: { status: "PENDING_REVIEW" } }),
+      prisma.order.findMany({
+        where: { status: "PENDING_REVIEW" },
+        orderBy: { createdAt: "desc" },
+        take: 5,
+      }),
+      prisma.category.count(),
+    ]);
 
   const totalRevenue = totalRevenueResult._sum.total || 0;
-  const pendingCount = await prisma.order.count({ where: { status: "PENDING_REVIEW" } });
 
   const stats = [
-    { title: "إجمالي الإيرادات", value: `${totalRevenue} ج.م`, icon: DollarSign, color: "text-green-500", bg: "bg-green-500/10" },
-    { title: "إجمالي الطلبات", value: totalOrders, icon: ShoppingCart, color: "text-blue-500", bg: "bg-blue-500/10" },
-    { title: "الطلبات المعلقة", value: pendingCount, icon: Clock, color: "text-orange-500", bg: "bg-orange-500/10" },
-    { title: "المنتجات", value: totalProducts, icon: ShoppingBag, color: "text-powder", bg: "bg-powder/15" },
+    { title: "بانتظار المراجعة", value: pendingCount, href: "/admin/orders", icon: Clock, tone: "text-orange-600 bg-orange-500/10" },
+    { title: "المبيعات المكتملة", value: `${totalRevenue} ج.م`, href: "/admin/orders", icon: DollarSign, tone: "text-green-600 bg-green-500/10" },
+    { title: "كل الطلبات", value: totalOrders, href: "/admin/orders", icon: ShoppingCart, tone: "text-blue-600 bg-blue-500/10" },
+    { title: "المنتجات", value: totalProducts, href: "/admin/products", icon: ShoppingBag, tone: "text-gold-deep bg-gold/15" },
   ];
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
-      <div className="flex justify-between items-end">
-        <div>
-          <h1 className="text-3xl font-bold mb-2">نظرة عامة</h1>
-          <p className="text-muted-foreground">ملخص أداء المتجر والطلبات الأخيرة.</p>
-        </div>
-      </div>
+    <div className="max-w-6xl mx-auto space-y-8">
+      <AdminPageHeader
+        title="أهلاً بك"
+        description="ابدأ من الطلبات المعلقة أو أضف منتجاً جديداً."
+        actions={
+          <>
+            <Link href="/admin/products/new">
+              <Button>
+                <Plus className="w-4 h-4 ml-1.5" /> منتج جديد
+              </Button>
+            </Link>
+            <Link href="/admin/categories">
+              <Button variant="outline">
+                <Tags className="w-4 h-4 ml-1.5" /> الأقسام
+              </Button>
+            </Link>
+          </>
+        }
+      />
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, idx) => (
-          <FadeIn key={idx} delay={idx * 0.1}>
-            <div className="treasure-frame rounded-2xl p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${stat.bg} ${stat.color}`}>
-                  <stat.icon className="w-6 h-6" />
-                </div>
-              </div>
-              <div>
-                <h3 className="text-muted-foreground font-medium mb-1">{stat.title}</h3>
-                <div className="text-3xl font-bold">{stat.value}</div>
-              </div>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        {stats.map((stat) => (
+          <Link
+            key={stat.title}
+            href={stat.href}
+            className="bg-card border border-gold/20 rounded-2xl p-4 sm:p-5 hover:border-gold/50 transition-colors"
+          >
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${stat.tone}`}>
+              <stat.icon className="w-5 h-5" />
             </div>
-          </FadeIn>
+            <div className="text-sm text-muted-foreground mb-1">{stat.title}</div>
+            <div className="text-xl sm:text-2xl font-bold">{stat.value}</div>
+          </Link>
         ))}
       </div>
 
-      {/* Recent Pending Orders */}
-      <div className="treasure-frame rounded-2xl overflow-hidden">
-        <div className="px-6 py-5 border-b border-border flex justify-between items-center bg-muted/20">
-          <div className="flex items-center gap-2">
-            <AlertCircle className="w-5 h-5 text-orange-500" />
-            <h2 className="text-lg font-bold">طلبات بحاجة للمراجعة</h2>
+      <AdminPanel>
+        <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+          <div>
+            <h2 className="font-bold">طلبات تحتاج مراجعة</h2>
+            <p className="text-sm text-muted-foreground">{pendingCount} طلب بانتظار تأكيد الدفع</p>
           </div>
-          <Link href="/admin/orders" className="text-sm font-medium text-accent hover:underline">
-            عرض كل الطلبات
+          <Link href="/admin/orders" className="text-sm font-medium text-gold-deep inline-flex items-center gap-1">
+            الكل <ArrowLeft className="w-4 h-4" />
           </Link>
         </div>
-        
+
         {pendingOrders.length > 0 ? (
           <div className="divide-y divide-border">
-            {pendingOrders.map(order => (
-              <div key={order.id} className="p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:bg-muted/30 transition-colors">
-                <div>
-                  <div className="font-mono text-sm text-muted-foreground mb-1">{order.orderId}</div>
-                  <div className="font-bold text-lg mb-1">{order.customerName}</div>
-                  <div className="text-sm text-muted-foreground">التاريخ: {new Date(order.createdAt).toLocaleString('ar-EG')}</div>
+            {pendingOrders.map((order) => (
+              <Link
+                key={order.id}
+                href={`/admin/orders/${order.id}`}
+                className="px-5 py-4 flex items-center justify-between gap-4 hover:bg-muted/40 transition-colors"
+              >
+                <div className="min-w-0">
+                  <div className="font-bold truncate">{order.customerName}</div>
+                  <div className="text-sm text-muted-foreground">
+                    {order.orderId} · {new Date(order.createdAt).toLocaleDateString("ar-EG")}
+                  </div>
                 </div>
-                <div className="text-right">
-                  <div className="font-bold text-accent text-xl mb-2">{order.total} ج.م</div>
-                  <Link href={`/admin/orders/${order.id}`} className="inline-flex items-center justify-center bg-background border border-border rounded-lg px-4 py-2 text-sm font-medium hover:text-accent hover:border-accent transition-colors">
-                    مراجعة الطلب
-                  </Link>
+                <div className="text-left shrink-0">
+                  <div className="font-bold">{order.total} ج.م</div>
+                  <div className="text-xs text-orange-600 font-medium">مراجعة</div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         ) : (
-          <div className="p-12 text-center text-muted-foreground">
-            <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-              <ShoppingCart className="w-8 h-8 opacity-50" />
-            </div>
-            <p>لا يوجد طلبات معلقة بانتظار المراجعة حالياً.</p>
-          </div>
+          <div className="px-5 py-12 text-center text-muted-foreground">لا توجد طلبات معلّقة حالياً.</div>
         )}
-      </div>
+      </AdminPanel>
+
+      <p className="text-sm text-muted-foreground text-center">
+        لديك {categoryCount} قسم في المتجر.
+      </p>
     </div>
   );
 }

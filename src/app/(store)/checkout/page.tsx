@@ -11,7 +11,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createOrder, getStoreSettings } from "@/app/actions/order";
 import { validateDiscountCode } from "@/app/actions/discount";
-import Image from "next/image";
+import { StoreImage } from "@/components/ui/StoreImage";
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -129,8 +129,11 @@ export default function CheckoutPage() {
         items: items.map(item => ({
           productId: item.product.id,
           titleSnapshot: item.product.title,
-          priceSnapshot: item.product.price,
-          quantity: item.quantity
+          priceSnapshot: item.unitPrice ?? item.product.price,
+          quantity: item.quantity,
+          packageId: item.packageId || null,
+          packageName: item.packageName || null,
+          packageQuantity: item.packageQuantity || null,
         }))
       };
 
@@ -220,17 +223,20 @@ export default function CheckoutPage() {
                 
                 <div className="space-y-4 max-h-[40vh] overflow-y-auto hide-scrollbar mb-6">
                   {items.map(item => (
-                    <div key={item.product.id} className="flex gap-4">
+                    <div key={item.lineId || item.product.id} className="flex gap-4">
                       <div className="w-12 h-12 bg-muted rounded-md overflow-hidden relative shrink-0">
                         {item.product.image ? (
-                          <Image src={item.product.image} fill alt="" className="object-cover" />
+                          <StoreImage src={item.product.image} fill alt="" className="object-cover" />
                         ) : null}
                       </div>
                       <div className="flex-1">
                         <h4 className="font-semibold text-xs line-clamp-1">{item.product.title}</h4>
+                        {item.packageName && (
+                          <div className="text-[11px] text-gold-deep">{item.packageName}</div>
+                        )}
                         <div className="flex justify-between mt-1 text-xs text-muted-foreground">
                           <span>الكمية: {item.quantity}</span>
-                          <span>{item.product.price * item.quantity} ج.م</span>
+                          <span>{(item.unitPrice ?? item.product.price) * item.quantity} ج.م</span>
                         </div>
                       </div>
                     </div>

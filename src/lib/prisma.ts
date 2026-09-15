@@ -1,13 +1,30 @@
 import { PrismaClient } from "@prisma/client";
 
-const prismaClientSingleton = () => {
-  return new PrismaClient();
+const globalForPrisma = globalThis as unknown as {
+  prisma?: PrismaClient;
 };
 
-declare const globalThis: {
-  prismaGlobal: ReturnType<typeof prismaClientSingleton>;
-} & typeof global;
+function createPrismaClient() {
+  return new PrismaClient();
+}
 
-export const prisma = globalThis.prismaGlobal ?? prismaClientSingleton();
+function getPrismaClient() {
+  const existing = globalForPrisma.prisma;
+  if (existing && typeof existing.product?.findUnique === "function") {
+    return existing;
+  }
 
-if (process.env.NODE_ENV !== "production") globalThis.prismaGlobal = prisma;
+  const client = createPrismaClient();
+  if (process.env.NODE_ENV !== "production") {
+    globalForPrisma.prisma = client;
+  }
+  return client;
+}
+
+export const prisma = new Proxy({} as PrismaClient, {
+  get(_target, prop, receiver) {
+    const client = getPrismaClient();
+    const value = Reflect.get(client, prop, receiver);
+    return typeof value === "function" ? value.bind(client) : value;
+  },
+});

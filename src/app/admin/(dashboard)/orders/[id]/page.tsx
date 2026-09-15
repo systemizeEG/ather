@@ -62,6 +62,12 @@ export default async function AdminOrderDetailsPage(props: { params: Promise<{ i
                 <div key={item.id} className="p-6 flex justify-between items-center hover:bg-muted/10">
                   <div>
                     <h3 className="font-bold text-lg mb-1">{item.titleSnapshot}</h3>
+                    {item.packageNameSnapshot && (
+                      <p className="text-sm text-accent mb-1">
+                        {item.packageNameSnapshot}
+                        {item.packageQuantitySnapshot ? ` · ${item.packageQuantitySnapshot} قطع` : ""}
+                      </p>
+                    )}
                     <p className="text-sm text-muted-foreground">الكمية: {item.quantity}</p>
                   </div>
                   <div className="text-left">

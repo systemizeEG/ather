@@ -6,8 +6,15 @@ import { Input } from "@/components/ui/Input";
 import { ArrowLeft, Save, Upload } from "lucide-react";
 import Link from "next/link";
 import { updateProduct } from "@/app/actions/admin";
+import { PackageEditor } from "@/components/admin/PackageEditor";
 
-export default function EditProductForm({ product }: { product: any }) {
+export default function EditProductForm({
+  product,
+  categories,
+}: {
+  product: any;
+  categories: Array<{ id: string; name: string }>;
+}) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [fileUrl, setFileUrl] = useState(product.image || "");
   const [uploading, setUploading] = useState(false);
@@ -27,7 +34,7 @@ export default function EditProductForm({ product }: { product: any }) {
       if (data.success) {
         setFileUrl(data.url);
       }
-    } catch (err) {
+    } catch {
       alert("فشل رفع الصورة");
     } finally {
       setUploading(false);
@@ -51,12 +58,15 @@ export default function EditProductForm({ product }: { product: any }) {
 
       <form
         action={async (formData) => {
-          await updateProductWithId(formData);
+          const result = await updateProductWithId(formData);
+          if (result && result.error) {
+            alert(`خطأ: ${result.error}`);
+            setIsSubmitting(false);
+          }
         }}
         className="space-y-8"
         onSubmit={() => setIsSubmitting(true)}
       >
-        {/* Core Details */}
         <div className="bg-card border border-border p-6 rounded-2xl shadow-sm space-y-5">
           <h2 className="text-xl font-bold mb-4">البيانات الأساسية</h2>
 
@@ -87,11 +97,19 @@ export default function EditProductForm({ product }: { product: any }) {
             </div>
             <div>
               <label className="block text-sm font-medium mb-1.5">القسم</label>
-              <Input
-                name="category"
-                defaultValue={product.category || ""}
-                placeholder="مثال: اشتراكات ترفيهية"
-              />
+              <select
+                name="categoryId"
+                required
+                defaultValue={product.categoryId || ""}
+                className="w-full bg-background border border-border rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-accent"
+              >
+                <option value="">اختر القسم</option>
+                {categories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -102,6 +120,7 @@ export default function EditProductForm({ product }: { product: any }) {
                   name="price"
                   type="number"
                   step="0.01"
+                  min="0"
                   defaultValue={product.price}
                   required
                 />
@@ -114,6 +133,7 @@ export default function EditProductForm({ product }: { product: any }) {
                   name="comparePrice"
                   type="number"
                   step="0.01"
+                  min="0"
                   defaultValue={product.comparePrice || ""}
                 />
               </div>
@@ -134,7 +154,6 @@ export default function EditProductForm({ product }: { product: any }) {
           </div>
         </div>
 
-        {/* Media & Details */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="bg-card border border-border p-6 rounded-2xl shadow-sm space-y-5">
             <h2 className="text-xl font-bold mb-4">صورة المنتج</h2>
@@ -200,7 +219,9 @@ export default function EditProductForm({ product }: { product: any }) {
             ></textarea>
           </div>
         </div>
-        
+
+        <PackageEditor initialPackages={product.packages || []} />
+
         <div className="bg-card border border-border p-6 rounded-2xl shadow-sm space-y-5">
           <h2 className="text-xl font-bold mb-4">الحالة والظهور</h2>
           <div>

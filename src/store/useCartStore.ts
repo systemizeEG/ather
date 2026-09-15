@@ -1,10 +1,33 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { Product } from "@prisma/client";
+
+export type CartProduct = {
+  id: string;
+  slug: string;
+  title: string;
+  shortDescription: string | null;
+  image: string | null;
+  price: number;
+  comparePrice?: number | null;
+  categoryName?: string | null;
+};
+
+export type CartPackage = {
+  id: string;
+  name: string;
+  quantity: number;
+  price: number;
+  compareAtPrice?: number | null;
+};
 
 export interface CartItem {
-  product: Product;
+  lineId: string;
+  product: CartProduct;
   quantity: number;
+  packageId: string | null;
+  packageName: string | null;
+  packageQuantity: number | null;
+  unitPrice: number;
 }
 
 interface CartState {
@@ -13,9 +36,9 @@ interface CartState {
     code: string;
     percentage: number;
   } | null;
-  addItem: (product: Product, quantity?: number) => void;
-  removeItem: (productId: String) => void;
-  updateQuantity: (productId: String, quantity: number) => void;
+  addItem: (product: CartProduct, quantity?: number, pkg?: CartPackage | null) => void;
+  removeItem: (lineId: string) => void;
+  updateQuantity: (lineId: string, quantity: number) => void;
   clearCart: () => void;
   setAppliedDiscount: (discount: { code: string; percentage: number } | null) => void;
   getCartTotal: () => number;
@@ -24,38 +47,84 @@ interface CartState {
   getCartCount: () => number;
 }
 
+function toCartProduct(product: CartProduct & { category?: string | { name?: string } | null }): CartProduct {
+  return {
+    id: product.id,
+    slug: product.slug,
+    title: product.title,
+    shortDescription: product.shortDescription ?? null,
+    image: product.image ?? null,
+    price: product.price,
+    comparePrice: product.comparePrice ?? null,
+    categoryName:
+      product.categoryName ??
+      (typeof product.category === "string" ? product.category : product.category?.name) ??
+      null,
+  };
+}
+
+function getLineId(productId: string, packageId?: string | null) {
+  return `${productId}:${packageId || "single"}`;
+}
+
+function getUnitPrice(item: CartItem) {
+  return item.unitPrice ?? item.product?.price ?? 0;
+}
+
+function getItemLineId(item: CartItem) {
+  return item.lineId || getLineId(item.product.id, item.packageId);
+}
+
 export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
       items: [],
       appliedDiscount: null,
-      
-      addItem: (product: Product, quantity = 1) => {
+
+      addItem: (product, quantity = 1, pkg = null) => {
+        const cartProduct = toCartProduct(product);
+        const packageId = pkg?.id ?? null;
+        const lineId = getLineId(cartProduct.id, packageId);
+        const unitPrice = pkg ? pkg.price : cartProduct.price;
+
         set((state) => {
-          const existingItem = state.items.find((item) => item.product.id === product.id);
+          const existingItem = state.items.find((item) => getItemLineId(item) === lineId);
           if (existingItem) {
             return {
               items: state.items.map((item) =>
-                item.product.id === product.id
-                  ? { ...item, quantity: item.quantity + quantity }
+                getItemLineId(item) === lineId
+                  ? { ...item, quantity: item.quantity + quantity, unitPrice, lineId }
                   : item
               ),
             };
           }
-          return { items: [...state.items, { product, quantity }] };
+          return {
+            items: [
+              ...state.items,
+              {
+                lineId,
+                product: cartProduct,
+                quantity,
+                packageId,
+                packageName: pkg?.name ?? null,
+                packageQuantity: pkg?.quantity ?? null,
+                unitPrice,
+              },
+            ],
+          };
         });
       },
 
-      removeItem: (productId: String) => {
+      removeItem: (lineId) => {
         set((state) => ({
-          items: state.items.filter((item) => item.product.id !== productId),
+          items: state.items.filter((item) => getItemLineId(item) !== lineId),
         }));
       },
 
-      updateQuantity: (productId: String, quantity: number) => {
+      updateQuantity: (lineId, quantity) => {
         set((state) => ({
           items: state.items.map((item) =>
-            item.product.id === productId ? { ...item, quantity } : item
+            getItemLineId(item) === lineId ? { ...item, quantity } : item
           ),
         }));
       },
@@ -66,7 +135,7 @@ export const useCartStore = create<CartState>()(
 
       getCartTotal: () => {
         return get().items.reduce(
-          (total, item) => total + item.product.price * item.quantity,
+          (total, item) => total + getUnitPrice(item) * item.quantity,
           0
         );
       },

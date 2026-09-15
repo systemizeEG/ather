@@ -9,22 +9,29 @@ export async function validateDiscountCode(code: string) {
       where: {
         code: { equals: normalized, mode: "insensitive" },
       },
+      include: {
+        candidateProfile: true,
+      },
     });
 
     if (!discountCode) {
-      return { error: "كود الخصم غير موجود" }; // Discount code not found
+      return { error: "كود الخصم غير موجود" };
     }
 
     if (!discountCode.isActive) {
-      return { error: "كود الخصم غير مفعل حالياً" }; // Discount code not active
+      return { error: "كود الخصم غير مفعل حالياً" };
+    }
+
+    if (discountCode.candidateProfile && !discountCode.candidateProfile.isActive) {
+      return { error: "كود الخصم غير مفعل حالياً" };
     }
 
     if (discountCode.expiryDate && new Date() > discountCode.expiryDate) {
-      return { error: "كود الخصم منتهي الصلاحية" }; // Discount code expired
+      return { error: "كود الخصم منتهي الصلاحية" };
     }
 
     if (discountCode.maxUses && discountCode.usedCount >= discountCode.maxUses) {
-      return { error: "كود الخصم وصل للحد الأقصى للإستخدام" }; // Max uses reached
+      return { error: "كود الخصم وصل للحد الأقصى للإستخدام" };
     }
 
     return {
@@ -36,6 +43,6 @@ export async function validateDiscountCode(code: string) {
     };
   } catch (error) {
     console.error("Error validating discount code:", error);
-    return { error: "حدث خطأ أثناء التحقق من كود الخصم" }; // Error during validation
+    return { error: "حدث خطأ أثناء التحقق من كود الخصم" };
   }
 }

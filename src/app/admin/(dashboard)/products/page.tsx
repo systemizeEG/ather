@@ -1,37 +1,69 @@
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import Link from "next/link";
-import { Plus, Edit, Trash2, CheckCircle, XCircle } from "lucide-react";
+import { Plus, Edit, CheckCircle, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { AdminPageHeader, AdminPanel } from "@/components/admin/AdminPageHeader";
 
-export default async function AdminProductsPage() {
+export default async function AdminProductsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ category?: string }>;
+}) {
+  const { category } = await searchParams;
+  const categories = await prisma.category.findMany({ orderBy: { name: "asc" } });
+
+  const productWhere = category
+    ? ({ category: { id: category } } as Prisma.ProductWhereInput)
+    : undefined;
+
   const products = await prisma.product.findMany({
-    orderBy: { createdAt: "desc" }
+    where: productWhere,
+    include: { category: true },
+    orderBy: { createdAt: "desc" },
   });
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
-      <div className="flex justify-between items-center border-b border-border pb-6">
-        <div>
-          <h1 className="text-3xl font-bold mb-2">إدارة المنتجات</h1>
-          <p className="text-muted-foreground">عرض وإضافة وتعديل المنتجات المتاحة في المتجر.</p>
-        </div>
-        <Link href="/admin/products/new">
-          <Button variant="glow" size="lg">
-            <Plus className="w-5 h-5 ml-2" /> إضــافة منتج جديد
-          </Button>
-        </Link>
-      </div>
+    <div className="max-w-6xl mx-auto">
+      <AdminPageHeader
+        title="المنتجات"
+        description="أضف منتجات جديدة أو عدّل المنتجات الحالية."
+        actions={
+          <Link href="/admin/products/new">
+            <Button>
+              <Plus className="w-4 h-4 ml-1.5" /> إضافة منتج
+            </Button>
+          </Link>
+        }
+      />
 
-      <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
+      <form className="flex flex-wrap items-center gap-3 mb-5">
+        <label className="text-sm font-medium">تصفية حسب القسم</label>
+        <select
+          name="category"
+          defaultValue={category || ""}
+          className="bg-background border border-border rounded-xl px-4 py-2"
+        >
+          <option value="">كل الأقسام</option>
+          {categories.map((item) => (
+            <option key={item.id} value={item.id}>
+              {item.name}
+            </option>
+          ))}
+        </select>
+        <Button type="submit" variant="outline" size="sm">تصفية</Button>
+      </form>
+
+      <AdminPanel>
         <div className="overflow-x-auto">
-          <table className="w-full text-right bg-background">
-            <thead className="bg-muted text-muted-foreground text-sm uppercase font-semibold">
+          <table className="w-full text-right">
+            <thead className="bg-muted/40 text-muted-foreground text-sm">
               <tr>
-                <th className="px-6 py-4 rounded-tr-lg">المنتج</th>
-                <th className="px-6 py-4">القسم</th>
-                <th className="px-6 py-4">السعر</th>
-                <th className="px-6 py-4">الحالة</th>
-                <th className="px-6 py-4 text-center rounded-tl-lg">الإجراءات</th>
+                <th className="px-6 py-3">المنتج</th>
+                <th className="px-6 py-3">القسم</th>
+                <th className="px-6 py-3">السعر</th>
+                <th className="px-6 py-3">الحالة</th>
+                <th className="px-6 py-3 text-center">الإجراءات</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -44,7 +76,7 @@ export default async function AdminProductsPage() {
                     </td>
                     <td className="px-6 py-4">
                       <span className="bg-accent/10 text-accent px-3 py-1 rounded-md text-xs font-bold border border-accent/20">
-                        {product.category || "بدون قسم"}
+                        {product.category?.name || "بدون قسم"}
                       </span>
                     </td>
                     <td className="px-6 py-4">
@@ -68,9 +100,6 @@ export default async function AdminProductsPage() {
                             <Edit className="w-4 h-4 ml-1.5" /> تعديل
                           </Button>
                         </Link>
-                        <Button variant="destructive" size="sm" className="h-9 px-3">
-                          <Trash2 className="w-4 h-4 ml-1.5" /> حذف
-                        </Button>
                       </div>
                     </td>
                   </tr>
@@ -85,7 +114,7 @@ export default async function AdminProductsPage() {
             </tbody>
           </table>
         </div>
-      </div>
+      </AdminPanel>
     </div>
   );
 }

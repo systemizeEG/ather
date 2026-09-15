@@ -93,6 +93,9 @@ export default async function OrdersPage() {
                             </div>
                             <div>
                               <p className="font-medium text-sm line-clamp-1">{item.titleSnapshot}</p>
+                              {item.packageNameSnapshot && (
+                                <p className="text-xs text-gold-deep">{item.packageNameSnapshot}</p>
+                              )}
                               <p className="text-xs text-muted-foreground">الكمية: {item.quantity}</p>
                             </div>
                           </div>

@@ -31,7 +31,13 @@ export default function LoginPage() {
       setError("البريد الإلكتروني أو كلمة المرور غير صحيحة");
       setLoading(false);
     } else {
-      router.push("/store");
+      const sessionRes = await fetch("/api/auth/session");
+      const session = await sessionRes.json();
+      if (session?.user?.role === "CANDIDATE") {
+        router.push("/candidate");
+      } else {
+        router.push("/store");
+      }
       router.refresh();
     }
   };

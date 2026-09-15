@@ -1,20 +1,41 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
+import { StoreImage } from "@/components/ui/StoreImage";
 import { ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { Product } from "@prisma/client";
 import { FadeIn } from "@/components/ui/MotionWrapper";
 import { useCartStore } from "@/store/useCartStore";
 import { CornerMarks } from "@/components/ui/Treasure";
 
-export function ProductCard({ product, index = 0 }: { product: Product; index?: number }) {
+export type ProductCardProduct = {
+  id: string;
+  slug: string;
+  title: string;
+  shortDescription: string | null;
+  image: string | null;
+  price: number;
+  comparePrice: number | null;
+  isPopular: boolean;
+  deliveryType: string | null;
+  category?: { name: string; slug: string } | null;
+};
+
+export function ProductCard({ product, index = 0 }: { product: ProductCardProduct; index?: number }) {
   const addItem = useCartStore((state) => state.addItem);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
-    addItem(product);
+    addItem({
+      id: product.id,
+      slug: product.slug,
+      title: product.title,
+      shortDescription: product.shortDescription,
+      image: product.image,
+      price: product.price,
+      comparePrice: product.comparePrice,
+      categoryName: product.category?.name,
+    });
   };
 
   return (
@@ -24,7 +45,7 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
           <CornerMarks />
           <div className="aspect-[4/5] relative velvet-well overflow-hidden m-[6px] rounded-[1.15rem]">
             {product.image ? (
-              <Image
+              <StoreImage
                 src={product.image}
                 alt={product.title}
                 fill
@@ -50,7 +71,7 @@ export function ProductCard({ product, index = 0 }: { product: Product; index?: 
             <div className="absolute top-4 left-4">
               {product.category && (
                 <div className="bg-pearl/90 backdrop-blur-md text-truffle text-xs px-2 py-1 rounded-full border border-gold/30">
-                  {product.category}
+                  {product.category.name}
                 </div>
               )}
             </div>

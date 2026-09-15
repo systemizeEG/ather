@@ -3,7 +3,7 @@
 import { useCartStore } from "@/store/useCartStore";
 import { PageTransition, FadeIn } from "@/components/ui/MotionWrapper";
 import { Trash2, Plus, Minus, ArrowRight, ShoppingBag } from "lucide-react";
-import Image from "next/image";
+import { StoreImage } from "@/components/ui/StoreImage";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 
@@ -40,13 +40,13 @@ export default function CartPage() {
           {/* Cart Items List */}
           <div className="lg:col-span-2 space-y-6">
             {items.map((item, index) => (
-              <FadeIn key={item.product.id} delay={index * 0.1}>
+              <FadeIn key={item.lineId || `${item.product.id}-${index}`} delay={index * 0.1}>
                 <div className="treasure-frame rounded-2xl p-4 sm:p-6 flex flex-col sm:flex-row gap-6 items-center sm:items-stretch group">
                   
                   {/* Image */}
                   <div className="relative w-32 h-32 sm:w-40 sm:h-auto shrink-0 bg-muted/50 rounded-xl overflow-hidden">
                     {item.product.image ? (
-                      <Image src={item.product.image} alt={item.product.title} fill className="object-cover" />
+                      <StoreImage src={item.product.image} alt={item.product.title} fill className="object-cover" />
                     ) : (
                       <div className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground">صورة</div>
                     )}
@@ -56,14 +56,20 @@ export default function CartPage() {
                   <div className="flex flex-col justify-between flex-1 w-full">
                     <div className="flex justify-between items-start gap-4">
                       <div>
-                        {item.product.category && (
-                          <div className="text-xs text-gold-deep font-bold mb-1">{item.product.category}</div>
+                        {item.product.categoryName && (
+                          <div className="text-xs text-gold-deep font-bold mb-1">{item.product.categoryName}</div>
                         )}
                         <h3 className="text-lg font-bold mb-1 line-clamp-1">{item.product.title}</h3>
+                        {item.packageName && (
+                          <div className="text-sm font-semibold text-gold-deep mb-1">
+                            {item.packageName}
+                            {item.packageQuantity ? ` · ${item.packageQuantity} قطع` : ""}
+                          </div>
+                        )}
                         <p className="text-muted-foreground text-sm line-clamp-2 mb-4">{item.product.shortDescription}</p>
                       </div>
                       <button 
-                        onClick={() => removeItem(item.product.id)}
+                        onClick={() => removeItem(item.lineId || item.product.id)}
                         className="text-muted-foreground hover:text-red-500 transition-colors p-2 shrink-0 bg-red-500/5 rounded-full hover:bg-red-500/10"
                       >
                         <Trash2 className="w-5 h-5" />
@@ -74,14 +80,14 @@ export default function CartPage() {
                       {/* Quantity Control */}
                       <div className="flex items-center gap-4 bg-background border border-border rounded-lg px-2 py-1">
                         <button 
-                          onClick={() => updateQuantity(item.product.id, Math.max(1, item.quantity - 1))}
+                          onClick={() => updateQuantity(item.lineId || item.product.id, Math.max(1, item.quantity - 1))}
                           className="p-1 text-muted-foreground hover:text-foreground"
                         >
                           <Minus className="w-4 h-4" />
                         </button>
                         <span className="font-semibold w-6 text-center">{item.quantity}</span>
                         <button 
-                          onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                          onClick={() => updateQuantity(item.lineId || item.product.id, item.quantity + 1)}
                           className="p-1 text-muted-foreground hover:text-foreground"
                         >
                           <Plus className="w-4 h-4" />
@@ -91,11 +97,11 @@ export default function CartPage() {
                       {/* Price */}
                       <div className="text-left">
                         <div className="text-xl font-bold text-gold-deep">
-                          {(item.product.price * item.quantity).toFixed(2)} ج.م
+                          {((item.unitPrice ?? item.product.price) * item.quantity).toFixed(2)} ج.م
                         </div>
                         {item.quantity > 1 && (
                           <div className="text-xs text-muted-foreground">
-                            {item.product.price} ج.م للقطعة
+                            {item.unitPrice ?? item.product.price} ج.م للخيار
                           </div>
                         )}
                       </div>

@@ -10,12 +10,24 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const products = await prisma.product.findMany({
     select: { slug: true, updatedAt: true }
   })
- 
+
+  const categories = await prisma.category.findMany({
+    where: { isActive: true },
+    select: { slug: true, updatedAt: true },
+  })
+
   const productEntries: MetadataRoute.Sitemap = products.map((product) => ({
     url: `${baseUrl}/store/${product.slug}`,
     lastModified: product.updatedAt,
     changeFrequency: 'weekly',
     priority: 0.7,
+  }))
+
+  const categoryEntries: MetadataRoute.Sitemap = categories.map((category) => ({
+    url: `${baseUrl}/category/${category.slug}`,
+    lastModified: category.updatedAt,
+    changeFrequency: 'weekly',
+    priority: 0.8,
   }))
  
   return [
@@ -32,5 +44,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.9,
     },
     ...productEntries,
+    ...categoryEntries,
   ]
 }

@@ -7,27 +7,62 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Category {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  slug        String    @unique
+  description String?
+  image       String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  products    Product[]
+}
+
 model Product {
-  id               String      @id @default(cuid())
-  slug             String      @unique
+  id               String           @id @default(cuid())
+  slug             String           @unique
   title            String
   shortDescription String?
   fullDescription  String?
-  category         String?
+  categoryId       String?
   price            Float
   comparePrice     Float?
   image            String?
-  stock            Int         @default(0)
+  stock            Int              @default(0)
   duration         String?
   deliveryType     String?
   features         String?
   tags             String?
-  isFeatured       Boolean     @default(true)
-  isPopular        Boolean     @default(false)
-  status           String      @default("ACTIVE")
-  createdAt        DateTime    @default(now())
-  updatedAt        DateTime    @updatedAt
+  isFeatured       Boolean          @default(true)
+  isPopular        Boolean          @default(false)
+  status           String           @default("ACTIVE")
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  category         Category?        @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   orderItems       OrderItem[]
+  packages         ProductPackage[]
+
+  @@index([categoryId])
+  @@index([status])
+}
+
+model ProductPackage {
+  id             String      @id @default(cuid())
+  productId      String
+  name           String
+  description    String?
+  quantity       Int
+  price          Float
+  compareAtPrice Float?
+  isActive       Boolean     @default(true)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  product        Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  orderItems     OrderItem[]
+
+  @@index([productId])
+  @@index([productId, isActive])
 }
 
 model Order {
@@ -41,7 +76,7 @@ model Order {
   subtotal          Float
   total             Float
   discountCode      String?
-  discountAmount    Float? @default(0)
+  discountAmount    Float?      @default(0)
   paymentMethod     String      @default("INSTAPAY")
   paymentScreenshot String?
   status            String      @default("PENDING_PAYMENT_REVIEW")
@@ -51,28 +86,63 @@ model Order {
   updatedAt         DateTime    @updatedAt
   user              User?       @relation(fields: [userId], references: [id])
   items             OrderItem[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([discountCode])
+  @@index([createdAt])
 }
 
 model OrderItem {
-  id            String   @id @default(cuid())
-  orderId       String
-  productId     String?
-  titleSnapshot String
-  priceSnapshot Float
-  quantity      Int
-  product       Product? @relation(fields: [productId], references: [id])
-  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  id                      String          @id @default(cuid())
+  orderId                 String
+  productId               String?
+  packageId               String?
+  titleSnapshot           String
+  priceSnapshot           Float
+  quantity                Int
+  packageNameSnapshot     String?
+  packageQuantitySnapshot Int?
+  product                 Product?        @relation(fields: [productId], references: [id])
+  package                 ProductPackage? @relation(fields: [packageId], references: [id], onDelete: SetNull)
+  order                   Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([productId])
+  @@index([packageId])
 }
 
 model User {
-  id           String   @id @default(cuid())
-  name         String
-  email        String   @unique
-  passwordHash String
-  phone        String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  orders       Order[]
+  id                String            @id @default(cuid())
+  name              String
+  email             String            @unique
+  passwordHash      String
+  phone             String?
+  role              String            @default("CUSTOMER")
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  orders            Order[]
+  candidateProfile  CandidateProfile?
+
+  @@index([role])
+}
+
+model CandidateProfile {
+  id          String       @id @default(cuid())
+  userId      String       @unique
+  couponId    String       @unique
+  targetType  String       @default("ORDERS")
+  targetValue Float
+  startDate   DateTime
+  endDate     DateTime?
+  isActive    Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  coupon      DiscountCode @relation(fields: [couponId], references: [id], onDelete: Restrict)
+
+  @@index([couponId])
+  @@index([isActive])
 }
 
 model AdminUser {
@@ -96,13 +166,18 @@ model Settings {
 }
 
 model DiscountCode {
-  id          String   @id @default(cuid())
-  code        String   @unique
-  percentage  Float
-  isActive    Boolean  @default(true)
-  usedCount   Int      @default(0)
-  maxUses     Int?
-  expiryDate  DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id               String            @id @default(cuid())
+  code             String            @unique
+  percentage       Float
+  isActive         Boolean           @default(true)
+  usedCount        Int               @default(0)
+  maxUses          Int?
+  expiryDate       DateTime?
+  type             String            @default("GENERAL")
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  candidateProfile CandidateProfile?
+
+  @@index([type])
+  @@index([isActive])
 }

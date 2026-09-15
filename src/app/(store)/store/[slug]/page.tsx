@@ -1,8 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
-import Image from "next/image";
-import { PageTransition, FadeIn } from "@/components/ui/MotionWrapper";
-import { Clock, Shield, Zap, ArrowRight, CheckCircle2 } from "lucide-react";
+import { StoreImage } from "@/components/ui/StoreImage";
+import { PageTransition } from "@/components/ui/MotionWrapper";
+import { ArrowRight, Shield } from "lucide-react";
 import Link from "next/link";
 import { ProductCard } from "@/components/product/ProductCard";
 import { AddToCartButton } from "./AddToCartButton";
@@ -11,11 +11,17 @@ export const revalidate = 60;
 
 export default async function ProductDetailsPage(props: { params: Promise<{ slug: string }> }) {
   const params = await props.params;
-
   const slugDecoded = decodeURIComponent(params.slug);
 
   const product = await prisma.product.findUnique({
     where: { slug: slugDecoded },
+    include: {
+      category: true,
+      packages: {
+        where: { isActive: true },
+        orderBy: { quantity: "asc" },
+      },
+    },
   });
 
   if (!product || product.status !== "ACTIVE") {
@@ -24,10 +30,11 @@ export default async function ProductDetailsPage(props: { params: Promise<{ slug
 
   const relatedProducts = await prisma.product.findMany({
     where: {
-      category: product.category,
+      categoryId: product.categoryId || undefined,
       id: { not: product.id },
       status: "ACTIVE",
     },
+    include: { category: true },
     take: 3,
   });
 
@@ -37,133 +44,132 @@ export default async function ProductDetailsPage(props: { params: Promise<{ slug
       const parsed = JSON.parse(product.features);
       features = Array.isArray(parsed) ? parsed : [product.features];
     }
-  } catch (error) {
+  } catch {
     features = product.features ? [product.features] : [];
   }
 
   return (
     <PageTransition>
-      <div className="pt-24">
-        <FadeIn className="px-6 md:px-10 py-6">
-          <Link href="/store" className="inline-flex items-center text-muted-foreground hover:text-gold-deep text-[11px] tracking-[0.2em] uppercase">
-            <ArrowRight className="ml-2 w-4 h-4" />
-            الخزينة
-          </Link>
-        </FadeIn>
+      <div className="container mx-auto px-4 pt-28 pb-16 max-w-6xl">
+        <Link
+          href={product.category?.isActive ? `/category/${product.category.slug}` : "/store"}
+          className="inline-flex items-center text-sm text-muted-foreground hover:text-gold-deep mb-8"
+        >
+          <ArrowRight className="ml-2 w-4 h-4" />
+          {product.category?.isActive ? product.category.name : "الخزينة"}
+        </Link>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 mb-20">
-          <div className="relative min-h-[70vh] velvet-well">
+        <div className="grid grid-cols-1 lg:grid-cols-[1.05fr_0.95fr] gap-8 lg:gap-12 items-start">
+          <div className="relative aspect-[4/5] sm:aspect-[5/6] velvet-well rounded-3xl overflow-hidden">
             {product.image ? (
-              <Image 
-                src={product.image} 
-                alt={product.title} 
-                fill 
+              <StoreImage
+                src={product.image}
+                alt={product.title}
+                fill
                 className="object-cover"
                 priority
               />
             ) : (
-            <div className="absolute inset-0 flex items-center justify-center text-pearl/60 font-display text-2xl">أثر</div>
+              <div className="absolute inset-0 flex items-center justify-center text-pearl/60 font-display text-2xl">
+                أثر
+              </div>
             )}
-            
-            {/* Badges */}
-            <div className="absolute top-6 right-6 flex flex-col gap-3">
-              {product.isPopular && (
-                <div className="bg-gold text-truffle text-sm font-bold px-4 py-2 rounded-full shadow-sm">
-                  الأكثر طلباً
-                </div>
+            {product.isPopular && (
+              <div className="absolute top-4 right-4 bg-gold text-truffle text-xs font-bold px-3 py-1.5 rounded-full">
+                الأكثر طلباً
+              </div>
+            )}
+          </div>
+
+          <div className="lg:sticky lg:top-32">
+            {product.category?.isActive && (
+              <Link
+                href={`/category/${product.category.slug}`}
+                className="text-gold text-xs font-bold tracking-[0.22em] uppercase mb-3 inline-block"
+              >
+                {product.category.name}
+              </Link>
+            )}
+            <h1 className="font-display text-3xl md:text-4xl font-bold mb-3 leading-tight">
+              {product.title}
+            </h1>
+            {product.shortDescription && (
+              <p className="text-muted-foreground mb-6 leading-relaxed">
+                {product.shortDescription}
+              </p>
+            )}
+
+            <AddToCartButton
+              product={{
+                id: product.id,
+                slug: product.slug,
+                title: product.title,
+                shortDescription: product.shortDescription,
+                image: product.image,
+                price: product.price,
+                comparePrice: product.comparePrice,
+                category: product.category
+                  ? { name: product.category.name, slug: product.category.slug }
+                  : null,
+              }}
+              packages={product.packages.map((pkg) => ({
+                id: pkg.id,
+                name: pkg.name,
+                description: pkg.description,
+                quantity: pkg.quantity,
+                price: pkg.price,
+                compareAtPrice: pkg.compareAtPrice,
+              }))}
+            />
+
+            <div className="mt-6 flex flex-wrap gap-2 text-xs text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5 bg-card border border-gold/20 rounded-full px-3 py-1.5">
+                <Shield className="w-3.5 h-3.5 text-gold-deep" />
+                ضمان كامل
+              </span>
+              {product.duration && (
+                <span className="inline-flex items-center gap-1.5 bg-card border border-gold/20 rounded-full px-3 py-1.5">
+                  المدة: {product.duration}
+                </span>
               )}
               {product.deliveryType === "INSTANT" && (
-                <div className="bg-powder text-truffle text-sm font-bold px-4 py-2 rounded-full shadow-sm">
+                <span className="inline-flex items-center gap-1.5 bg-card border border-gold/20 rounded-full px-3 py-1.5">
                   شحن سريع
-                </div>
+                </span>
               )}
-            </div>
-          </div>
-
-          {/* Product Info */}
-          <div className="flex flex-col justify-center px-6 py-12 lg:px-14 bg-pearl">
-            {product.category && (
-              <div className="text-gold text-sm font-bold tracking-[0.2em] uppercase mb-3">{product.category}</div>
-            )}
-            
-            <h1 className="font-display text-4xl md:text-5xl font-bold mb-4 leading-tight">{product.title}</h1>
-            
-            <div className="flex items-end gap-4 mb-6 pb-6 border-b border-gold/25">
-              <span className="text-4xl font-bold gold-text">{product.price} ج.م</span>
-              {product.comparePrice && (
-                <span className="text-xl text-muted-foreground line-through mb-1">{product.comparePrice} ج.م</span>
-              )}
-            </div>
-
-            <p className="text-muted-foreground text-lg mb-8 leading-relaxed">
-              {product.shortDescription}
-            </p>
-
-            {/* Quick Stats */}
-            <div className="grid grid-cols-2 gap-4 mb-10">
-              {product.duration && (
-                <div className="flex items-center gap-3 p-4 rounded-xl border border-border bg-muted/20">
-                  <Clock className="text-gold-deep w-6 h-6" />
-                  <div>
-                    <div className="text-xs text-muted-foreground font-medium mb-1">المدة</div>
-                    <div className="font-bold">{product.duration}</div>
-                  </div>
-                </div>
-              )}
-              <div className="flex items-center gap-3 p-4 rounded-xl border border-border bg-muted/20">
-                <Shield className="text-gold-deep w-6 h-6" />
-                <div>
-                  <div className="text-xs text-muted-foreground font-medium mb-1">الضمان</div>
-                  <div className="font-bold">ضمان كامل</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Interaction */}
-            <AddToCartButton product={product} />
-
-            <div className="mt-8 pt-8 border-t border-border/50 flex items-center justify-center text-sm text-muted-foreground gap-2">
-              <Zap className="w-4 h-4 text-gold" />
-              تأكيد الدفع عبر انستاباي، ثم الشحن بتغليف فاخر حتى بابك.
             </div>
           </div>
         </div>
 
-        {/* Full Description & Features */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 mt-16">
-          <FadeIn className="lg:col-span-2 space-y-8">
-            <h2 className="font-display text-2xl font-bold border-b border-border pb-4">تفاصيل المنتج الكاملة</h2>
-            <div className="prose max-w-none text-muted-foreground leading-loose">
-              {product.fullDescription || "لا توجد تفاصيل إضافية لهذا المنتج."}
-            </div>
-          </FadeIn>
-
-          <FadeIn delay={0.2} className="lg:col-span-1">
-            <div className="border-t border-gold/30 pt-8 sticky top-32">
-              <h3 className="text-xl font-bold mb-6">المميزات الأساسية</h3>
-              {features.length > 0 ? (
-                <ul className="space-y-4">
-                  {features.map((feature: string, idx: number) => (
-                    <li key={idx} className="flex gap-3 text-muted-foreground">
-                      <CheckCircle2 className="text-gold-deep w-5 h-5 shrink-0" />
-                      <span>{feature}</span>
-                    </li>
+        {(product.fullDescription || features.length > 0) && (
+          <div className="mt-16 pt-10 border-t border-gold/20 grid grid-cols-1 md:grid-cols-3 gap-10">
+            {product.fullDescription && (
+              <div className="md:col-span-2">
+                <h2 className="font-display text-2xl mb-4">التفاصيل</h2>
+                <p className="text-muted-foreground leading-loose whitespace-pre-line">
+                  {product.fullDescription}
+                </p>
+              </div>
+            )}
+            {features.length > 0 && (
+              <div>
+                <h2 className="font-display text-2xl mb-4">المميزات</h2>
+                <ul className="space-y-3 text-muted-foreground">
+                  {features.map((feature, idx) => (
+                    <li key={idx}>{feature}</li>
                   ))}
                 </ul>
-              ) : (
-                <p className="text-muted-foreground">لا توجد مميزات مسجلة.</p>
-              )}
-            </div>
-          </FadeIn>
-        </div>
+              </div>
+            )}
+          </div>
+        )}
 
-        {/* Related Products */}
         {relatedProducts.length > 0 && (
-          <div>
-            <h2 className="font-display text-3xl px-6 md:px-10 py-10">قد يعجبك أيضاً</h2>
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 px-6 md:px-10 pb-16">
-              {relatedProducts.map((p) => (
-                <ProductCard key={p.id} product={p} />
+          <div className="mt-16">
+            <h2 className="font-display text-2xl mb-6">قد يعجبك أيضاً</h2>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {relatedProducts.map((item) => (
+                <ProductCard key={item.id} product={item} />
               ))}
             </div>
           </div>

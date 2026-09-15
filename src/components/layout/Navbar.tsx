@@ -76,9 +76,15 @@ export function Navbar() {
 
         <div className="justify-self-end flex items-center gap-2 md:gap-3">
           {session?.user ? (
-            <Link href="/orders" className="hidden sm:inline text-[11px] tracking-[0.18em] uppercase hover:text-gold-deep">
-              {t.navbar.myOrders}
-            </Link>
+            session.user.role === "CANDIDATE" ? (
+              <Link href="/candidate" className="hidden sm:inline text-[11px] tracking-[0.18em] uppercase hover:text-gold-deep">
+                لوحة المرشح
+              </Link>
+            ) : (
+              <Link href="/orders" className="hidden sm:inline text-[11px] tracking-[0.18em] uppercase hover:text-gold-deep">
+                {t.navbar.myOrders}
+              </Link>
+            )
           ) : (
             <Link href="/login" className="hidden sm:inline text-[11px] tracking-[0.18em] uppercase hover:text-gold-deep" aria-label={t.navbar.login}>
               <User className="w-4 h-4" />
@@ -130,9 +136,20 @@ export function Navbar() {
                 </Link>
               ))}
               {session?.user ? (
-                <button onClick={() => signOut()} className="text-red-700 text-right">
-                  {t.navbar.logout}
-                </button>
+                <>
+                  {session.user.role === "CANDIDATE" ? (
+                    <Link href="/candidate" className="font-display text-xl" onClick={() => setIsMobileMenuOpen(false)}>
+                      {t.navbar.candidateDashboard}
+                    </Link>
+                  ) : (
+                    <Link href="/orders" className="font-display text-xl" onClick={() => setIsMobileMenuOpen(false)}>
+                      {t.navbar.myOrders}
+                    </Link>
+                  )}
+                  <button onClick={() => signOut()} className="text-red-700 text-right">
+                    {t.navbar.logout}
+                  </button>
+                </>
               ) : (
                 <Link href="/login" onClick={() => setIsMobileMenuOpen(false)}>
                   {t.navbar.loginSignup}

@@ -8,11 +8,11 @@ import { HeroSection } from "@/components/home/HeroSection";
 
 export const revalidate = 60;
 
-const rooms = [
-  { ar: "مجوهرات", en: "Jewelry", note: "01" },
-  { ar: "حقائب", en: "Bags", note: "02" },
-  { ar: "ساعات", en: "Watches", note: "03" },
-  { ar: "هدايا", en: "Gifts", note: "04" },
+const fallbackRooms = [
+  { ar: "مجوهرات", en: "Jewelry", note: "01", href: "/store" },
+  { ar: "حقائب", en: "Bags", note: "02", href: "/store" },
+  { ar: "ساعات", en: "Watches", note: "03", href: "/store" },
+  { ar: "هدايا", en: "Gifts", note: "04", href: "/store" },
 ];
 
 export default async function HomePage() {
@@ -20,11 +20,29 @@ export default async function HomePage() {
   const locale = (cookieStore.get("NEXT_LOCALE")?.value as Locale) || "ar";
   const t = getTranslation(locale);
 
-  const featuredProducts = await prisma.product.findMany({
-    where: { isFeatured: true, status: "ACTIVE" },
-    take: 6,
-    orderBy: { createdAt: "desc" },
-  });
+  const [featuredProducts, liveCategories] = await Promise.all([
+    prisma.product.findMany({
+      where: { isFeatured: true, status: "ACTIVE" },
+      include: { category: true },
+      take: 6,
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.category.findMany({
+      where: { isActive: true, slug: { not: "uncategorized" } },
+      orderBy: { name: "asc" },
+      take: 4,
+    }),
+  ]);
+
+  const rooms =
+    liveCategories.length > 0
+      ? liveCategories.map((category, index) => ({
+          ar: category.name,
+          en: category.name,
+          note: String(index + 1).padStart(2, "0"),
+          href: `/category/${category.slug}`,
+        }))
+      : fallbackRooms;
 
   return (
     <PageTransition>
@@ -46,7 +64,7 @@ export default async function HomePage() {
           {rooms.map((room) => (
             <Link
               key={room.note}
-              href="/store"
+              href={room.href}
               className="group border-t border-s border-gold/20 px-6 py-12 text-center hover:bg-gold/5 transition-colors"
             >
               <span className="block text-gold/70 text-[10px] tracking-[0.4em] mb-3">{room.note}</span>

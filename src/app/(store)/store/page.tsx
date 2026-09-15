@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import Link from "next/link";
 import { PageTransition, FadeIn } from "@/components/ui/MotionWrapper";
 import { ProductCard } from "@/components/product/ProductCard";
 
@@ -8,9 +9,31 @@ export const metadata = {
   description: "كنوز أثر: مجوهرات، حقائب، وإكسسوارات في خزينة واحدة.",
 };
 
-export default async function StorePage() {
+export default async function StorePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; category?: string }>;
+}) {
+  const { q, category } = await searchParams;
+  const categories = await prisma.category.findMany({
+    where: { isActive: true },
+    orderBy: { name: "asc" },
+  });
+
   const products = await prisma.product.findMany({
-    where: { status: "ACTIVE" },
+    where: {
+      status: "ACTIVE",
+      ...(category ? { category: { slug: category, isActive: true } } : {}),
+      ...(q
+        ? {
+            OR: [
+              { title: { contains: q, mode: "insensitive" } },
+              { shortDescription: { contains: q, mode: "insensitive" } },
+            ],
+          }
+        : {}),
+    },
+    include: { category: true },
     orderBy: { createdAt: "desc" },
   });
 
@@ -24,6 +47,30 @@ export default async function StorePage() {
             مجموعة منتقاة من الإكسسوارات — كل قطعة في علبتها.
           </p>
         </FadeIn>
+
+        {categories.length > 0 && (
+          <div className="flex flex-wrap gap-3 mb-10">
+            <Link
+              href="/store"
+              className={`px-4 py-2 rounded-full text-sm border ${
+                !category ? "bg-gold text-truffle border-gold" : "border-gold/30 hover:border-gold"
+              }`}
+            >
+              الكل
+            </Link>
+            {categories.map((item) => (
+              <Link
+                key={item.id}
+                href={`/category/${item.slug}`}
+                className={`px-4 py-2 rounded-full text-sm border ${
+                  category === item.slug ? "bg-gold text-truffle border-gold" : "border-gold/30 hover:border-gold"
+                }`}
+              >
+                {item.name}
+              </Link>
+            ))}
+          </div>
+        )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {products.length > 0 ? (
