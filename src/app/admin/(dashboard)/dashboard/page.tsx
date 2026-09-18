@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { DollarSign, ShoppingCart, ShoppingBag, Clock, Plus, Tags, ArrowLeft, Users } from "lucide-react";
+import { DollarSign, ShoppingCart, ShoppingBag, Clock, Plus, Tags, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { AdminPageHeader, AdminPanel } from "@/components/admin/AdminPageHeader";
 import { Button } from "@/components/ui/Button";
@@ -64,11 +64,6 @@ export default async function AdminDashboardPage() {
         description={t.admin.welcomeDesc}
         actions={
           <>
-            <Link href="/admin/candidates">
-              <Button variant="outline">
-                <Users className="w-4 h-4 ms-0 me-1.5" /> {t.admin.viewCandidates}
-              </Button>
-            </Link>
             <Link href="/admin/products/new">
               <Button>
                 <Plus className="w-4 h-4 ms-0 me-1.5" /> {t.admin.newProduct}

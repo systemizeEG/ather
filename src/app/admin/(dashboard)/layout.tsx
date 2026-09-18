@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
-import { isAdminRole } from "@/lib/auth-guards";
+import { getAdminUser, isAdminRole } from "@/lib/auth-guards";
+import { signOutAdminSession } from "@/lib/supabase/admin-session";
 import { AdminChrome } from "@/components/admin/AdminChrome";
 
 export default async function AdminLayout({
@@ -9,14 +8,11 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await getServerSession(authOptions);
+  const admin = await getAdminUser();
 
-  if (!session) {
+  if (!admin || !isAdminRole(admin.role)) {
+    await signOutAdminSession();
     redirect("/admin/login");
-  }
-
-  if (!isAdminRole(session.user?.role)) {
-    redirect("/");
   }
 
   return <AdminChrome>{children}</AdminChrome>;

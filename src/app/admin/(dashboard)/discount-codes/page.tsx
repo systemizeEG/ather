@@ -2,8 +2,12 @@ import { prisma } from "@/lib/prisma";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { getCandidatePerformance } from "@/lib/candidate-performance";
 import { DiscountCodeManager } from "./DiscountCodeManager";
+import { getRequestLocale } from "@/lib/locale";
+import { getTranslation } from "@/lib/dictionaries";
 
 export default async function DiscountCodesPage() {
+  const locale = await getRequestLocale();
+  const t = getTranslation(locale);
   const discountCodes = await prisma.discountCode.findMany({
     include: {
       candidateProfile: {
@@ -49,8 +53,8 @@ export default async function DiscountCodesPage() {
   return (
     <div className="max-w-5xl mx-auto">
       <AdminPageHeader
-        title="أكواد الخصم"
-        description="أنشئ كوبونات عامة للمتجر. كوبونات المرشحين تُدار من صفحة المرشحين."
+        title={t.admin.discountsTitle}
+        description={t.admin.discountsDesc}
       />
       <DiscountCodeManager codes={codes} />
     </div>

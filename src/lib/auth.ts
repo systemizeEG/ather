@@ -2,33 +2,15 @@ import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
-import { USER_ROLES } from "@/lib/constants";
+import { USER_ROLES, ADMIN_ROLES } from "@/lib/constants";
 import { getAuthSecret, useSecureAuthCookies } from "@/lib/auth-secret";
 
 type PasswordCredentials = {
-  username?: string;
   email?: string;
   password?: string;
 };
 
-async function authorizeAdmin(credentials: PasswordCredentials | undefined) {
-  if (!credentials?.username || !credentials?.password) return null;
-
-  try {
-    const user = await prisma.adminUser.findUnique({
-      where: { username: credentials.username },
-    });
-    if (!user) return null;
-    const valid = await bcrypt.compare(credentials.password, user.passwordHash);
-    if (!valid) return null;
-    return { id: user.id, name: user.username, email: user.email, role: user.role };
-  } catch (error) {
-    console.error("admin-login authorize failed", error);
-    return null;
-  }
-}
-
-async function authorizeCustomer(credentials: PasswordCredentials | undefined) {
+async function authorizeStoreUser(credentials: PasswordCredentials | undefined) {
   if (!credentials?.email || !credentials?.password) return null;
 
   try {
@@ -53,22 +35,13 @@ async function authorizeCustomer(credentials: PasswordCredentials | undefined) {
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
-      id: "admin-login",
-      name: "Admin Login",
-      credentials: {
-        username: { label: "Username", type: "text" },
-        password: { label: "Password", type: "password" },
-      },
-      authorize: authorizeAdmin,
-    }),
-    CredentialsProvider({
       id: "customer-login",
-      name: "Customer Login",
+      name: "Store Login",
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
-      authorize: authorizeCustomer,
+      authorize: authorizeStoreUser,
     }),
   ],
   session: {
@@ -81,6 +54,10 @@ export const authOptions: NextAuthOptions = {
         token.role = user.role;
         token.id = user.id;
       }
+      if (token.role === ADMIN_ROLES.ADMIN || token.role === ADMIN_ROLES.SUPERADMIN) {
+        delete token.role;
+        delete token.id;
+      }
       return token;
     },
     async session({ session, token }) {
@@ -92,7 +69,7 @@ export const authOptions: NextAuthOptions = {
     },
   },
   pages: {
-    signIn: "/admin/login",
+    signIn: "/login",
   },
   secret: getAuthSecret(),
 };

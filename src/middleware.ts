@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 import type { NextRequest } from "next/server";
-import { ADMIN_ROLES, USER_ROLES } from "@/lib/constants";
+import { USER_ROLES } from "@/lib/constants";
 import { getAuthSecret, useSecureAuthCookies } from "@/lib/auth-secret";
+import { getAdminAuthUser } from "@/lib/supabase/middleware";
 
-async function readAccessToken(req: NextRequest) {
+async function readStoreToken(req: NextRequest) {
   const secret = getAuthSecret();
   const preferred = await getToken({
     req,
@@ -16,21 +17,27 @@ async function readAccessToken(req: NextRequest) {
 }
 
 export async function middleware(req: NextRequest) {
-  const token = await readAccessToken(req);
   const path = req.nextUrl.pathname;
 
-  if (path.startsWith("/admin") && !path.startsWith("/admin/login")) {
-    const isAdmin =
-      token?.role === ADMIN_ROLES.ADMIN || token?.role === ADMIN_ROLES.SUPERADMIN;
-    if (!token || !isAdmin) {
+  if (path.startsWith("/admin")) {
+    const { user, supabaseResponse } = await getAdminAuthUser(req);
+
+    if (!path.startsWith("/admin/login") && !user) {
       const url = req.nextUrl.clone();
       url.pathname = "/admin/login";
       url.search = "";
-      return NextResponse.redirect(url);
+      const redirect = NextResponse.redirect(url);
+      supabaseResponse.cookies.getAll().forEach((cookie) => {
+        redirect.cookies.set(cookie.name, cookie.value);
+      });
+      return redirect;
     }
+
+    return supabaseResponse;
   }
 
   if (path.startsWith("/candidate") && path !== "/candidate/login") {
+    const token = await readStoreToken(req);
     if (!token || token.role !== USER_ROLES.CANDIDATE) {
       const url = req.nextUrl.clone();
       url.pathname = "/candidate/login";
@@ -43,5 +50,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/((?!login).*)", "/candidate", "/candidate/((?!login).*)"],
+  matcher: ["/admin/:path*", "/candidate", "/candidate/((?!login).*)"],
 };

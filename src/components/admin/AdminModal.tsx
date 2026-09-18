@@ -1,6 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
+import { useTranslation } from "@/components/TranslationProvider";
 
 export function AdminModal({
   open,
@@ -13,6 +14,7 @@ export function AdminModal({
   onClose: () => void;
   children: React.ReactNode;
 }) {
+  const { t } = useTranslation();
   if (!open) return null;
 
   return (
@@ -21,7 +23,7 @@ export function AdminModal({
         type="button"
         className="absolute inset-0 bg-truffle/40 backdrop-blur-sm"
         onClick={onClose}
-        aria-label="إغلاق"
+        aria-label={t.admin.closeMenu}
       />
       <div className="relative w-full max-w-lg bg-pearl border border-gold/25 rounded-t-3xl sm:rounded-3xl shadow-2xl max-h-[92vh] overflow-y-auto">
         <div className="sticky top-0 bg-pearl/95 backdrop-blur flex items-center justify-between px-6 py-4 border-b border-gold/20 z-10">
@@ -30,7 +32,7 @@ export function AdminModal({
             type="button"
             onClick={onClose}
             className="w-10 h-10 rounded-full hover:bg-gold/15 flex items-center justify-center"
-            aria-label="إغلاق"
+            aria-label={t.admin.closeMenu}
           >
             <X className="w-5 h-5" />
           </button>

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { slugify } from "@/lib/slug";
 import { ChevronDown, Upload } from "lucide-react";
+import { useTranslation } from "@/components/TranslationProvider";
 
 export function CategoryForm({
   category,
@@ -21,6 +22,7 @@ export function CategoryForm({
   };
   onDone?: () => void;
 }) {
+  const { t } = useTranslation();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [name, setName] = useState(category?.name || "");
   const [slug, setSlug] = useState(category?.slug || "");
@@ -43,7 +45,7 @@ export function CategoryForm({
       const data = await res.json();
       if (data.success) setFileUrl(data.url);
     } catch {
-      alert("فشل رفع الصورة");
+      alert(t.admin.uploadFailed);
     } finally {
       setUploading(false);
     }
@@ -69,18 +71,18 @@ export function CategoryForm({
       <input type="hidden" name="isActive" value={category ? (category.isActive ? "on" : "") : "on"} />
 
       <div>
-        <label className="block text-sm font-medium mb-1.5">اسم القسم</label>
+        <label className="block text-sm font-medium mb-1.5">{t.admin.categoryName}</label>
         <Input
           name="name"
           required
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="مثال: عطور"
+          placeholder={t.admin.categoryNamePlaceholder}
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-1.5">رابط الصفحة</label>
+        <label className="block text-sm font-medium mb-1.5">{t.admin.categorySlug}</label>
         <Input
           name="slug"
           value={slug}
@@ -90,9 +92,9 @@ export function CategoryForm({
           }}
           placeholder="perfumes"
           dir="ltr"
-          className="text-left"
+          className="text-start"
         />
-        <p className="text-xs text-muted-foreground mt-1">يُنشأ تلقائياً من الاسم. يمكن تعديله إذا أردت.</p>
+        <p className="text-xs text-muted-foreground mt-1">{t.admin.slugHint}</p>
       </div>
 
       <button
@@ -101,18 +103,18 @@ export function CategoryForm({
         className="flex items-center gap-2 text-sm font-medium text-gold-deep"
       >
         <ChevronDown className={`w-4 h-4 transition-transform ${showExtra ? "rotate-180" : ""}`} />
-        خيارات إضافية
+        {t.admin.extraOptions}
       </button>
 
       {showExtra && (
         <div className="space-y-4 rounded-2xl border border-gold/20 p-4 bg-background/60">
           <div>
-            <label className="block text-sm font-medium mb-1.5">الوصف</label>
+            <label className="block text-sm font-medium mb-1.5">{t.admin.description}</label>
             <textarea
               name="description"
               rows={3}
               defaultValue={category?.description || ""}
-              placeholder="اختياري"
+              placeholder={t.admin.optional}
               className="w-full bg-card border border-border rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-gold"
             />
           </div>
@@ -120,13 +122,13 @@ export function CategoryForm({
             <div className="border border-dashed border-gold/30 hover:border-gold rounded-xl p-4 text-center">
               <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
               {uploading ? (
-                "جاري الرفع..."
+                t.admin.uploading
               ) : fileUrl ? (
-                <span className="text-green-600 font-medium">تم رفع الصورة ✓</span>
+                <span className="text-green-600 font-medium">{t.admin.imageUploaded}</span>
               ) : (
                 <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
                   <Upload className="w-4 h-4" />
-                  صورة القسم (اختياري)
+                  {t.admin.categoryImage}
                 </div>
               )}
             </div>
@@ -138,7 +140,7 @@ export function CategoryForm({
 
       <div className="flex gap-3 pt-2">
         <Button type="submit" className="flex-1" isLoading={isSubmitting}>
-          {category ? "حفظ" : "إضافة القسم"}
+          {category ? t.admin.save : t.admin.addCategory}
         </Button>
       </div>
     </form>

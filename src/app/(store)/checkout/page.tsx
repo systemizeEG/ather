@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import { useCartStore } from "@/store/useCartStore";
 import { PageTransition, FadeIn } from "@/components/ui/MotionWrapper";
 import { Button } from "@/components/ui/Button";
@@ -15,6 +15,13 @@ import { StoreImage } from "@/components/ui/StoreImage";
 import { useTranslation } from "@/components/TranslationProvider";
 import { formatMoney, localizeProductTitle, tx } from "@/lib/catalog-i18n";
 import { PAYMENT_METHODS } from "@/lib/constants";
+import { CodDeliveryForm } from "@/components/checkout/CodDeliveryForm";
+import {
+  formatDeliveryNotes,
+  isDeliveryComplete,
+  splitFullName,
+  type DeliveryDetails,
+} from "@/lib/delivery";
 
 export default function CheckoutPage() {
   const { t, locale } = useTranslation();
@@ -32,6 +39,8 @@ export default function CheckoutPage() {
   const [orderId, setOrderId] = useState("");
   const [settings, setSettings] = useState<any>(null);
   const { data: session, status } = useSession();
+  const isStoreSession =
+    session?.user?.role === "CUSTOMER" || session?.user?.role === "CANDIDATE";
   const PayIcon = locale === "ar" ? ArrowRight : ArrowLeft;
 
   const [promoCode, setPromoCode] = useState("");
@@ -53,6 +62,17 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState<typeof PAYMENT_METHODS[keyof typeof PAYMENT_METHODS]>(
     PAYMENT_METHODS.INSTAPAY
   );
+  const [delivery, setDelivery] = useState<DeliveryDetails>({
+    firstName: "",
+    lastName: "",
+    address: "",
+    apartment: "",
+    city: "",
+    governorate: "",
+    postalCode: "",
+    phone: "",
+    marketingOptIn: false,
+  });
 
   useEffect(() => {
     setOrderId(`ORD-${Math.random().toString(36).substring(2, 6).toUpperCase()}`);
@@ -63,12 +83,26 @@ export default function CheckoutPage() {
   }, []);
 
   useEffect(() => {
+    const { firstName, lastName } = splitFullName(formData.customerName);
+    setDelivery((current) => ({
+      ...current,
+      firstName: current.firstName || firstName,
+      lastName: current.lastName || lastName,
+      phone: current.phone || formData.phone,
+    }));
+  }, [formData.customerName, formData.phone]);
+
+  useEffect(() => {
+    if (status === "authenticated" && !isStoreSession) {
+      signOut({ redirect: false }).then(() => router.push("/login"));
+      return;
+    }
     if (status === "unauthenticated") {
       router.push("/login");
     } else if (items.length === 0 && step === 1) {
       router.push("/cart");
     }
-  }, [items, router, step, status]);
+  }, [items, router, step, status, isStoreSession]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -104,7 +138,7 @@ export default function CheckoutPage() {
   const isCod = paymentMethod === PAYMENT_METHODS.CASH_ON_DELIVERY;
 
   const submitOrder = async () => {
-    if (isCod && !formData.address.trim()) return;
+    if (isCod && !isDeliveryComplete(delivery)) return;
     if (!isCod && !file) return;
     setIsSubmitting(true);
 
@@ -129,13 +163,16 @@ export default function CheckoutPage() {
         paymentScreenshot = uploadJSON.url;
       }
 
+      const deliveryName = `${delivery.firstName} ${delivery.lastName}`.trim();
+      const deliveryNotes = formatDeliveryNotes(delivery, locale);
+
       const orderData = {
         orderId,
-        customerName: formData.customerName,
-        phone: formData.phone,
+        customerName: isCod && deliveryName ? deliveryName : formData.customerName,
+        phone: isCod && delivery.phone.trim() ? delivery.phone.trim() : formData.phone,
         whatsapp: formData.whatsapp,
         email: formData.email,
-        notes: formData.address.trim() || formData.notes || undefined,
+        notes: isCod ? deliveryNotes : formData.notes || undefined,
         subtotal: getCartTotal(),
         total: getTotalAfterDiscount(),
         discountCode: appliedDiscount?.code || null,
@@ -180,9 +217,9 @@ export default function CheckoutPage() {
       wa = "20" + wa;
     }
     return `https://wa.me/${wa}?text=${encodeURIComponent(
-      `${isCod ? t.checkout.whatsappMessageCod : t.checkout.whatsappMessage}\n\n${t.checkout.orderNumber}: ${orderId}\n${t.checkout.name}: ${formData.customerName}${
-        formData.address.trim() ? `\n${t.checkout.address}: ${formData.address.trim()}` : ""
-      }`
+      `${isCod ? t.checkout.whatsappMessageCod : t.checkout.whatsappMessage}\n\n${t.checkout.orderNumber}: ${orderId}\n${t.checkout.name}: ${
+        isCod ? `${delivery.firstName} ${delivery.lastName}`.trim() : formData.customerName
+      }${isCod ? `\n${formatDeliveryNotes(delivery, locale)}` : ""}`
     )}`;
   })();
 
@@ -330,7 +367,7 @@ export default function CheckoutPage() {
         )}
 
         {step === 2 && (
-          <FadeIn className="max-w-xl mx-auto">
+          <FadeIn className="max-w-2xl mx-auto">
             <div className="bg-card border border-gold/30 rounded-3xl p-8 relative overflow-hidden">
               <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-gold via-gold-deep to-gold"></div>
 
@@ -381,23 +418,7 @@ export default function CheckoutPage() {
 
               {isCod ? (
                 <>
-                  <div className="mb-8">
-                    <h3 className="text-lg font-bold mb-1">{t.checkout.codTitle}</h3>
-                    <p className="text-sm text-muted-foreground mb-4">{t.checkout.codDesc}</p>
-                    <label className="block text-sm font-medium mb-2">
-                      {t.checkout.address} <span className="text-red-500">*</span>
-                    </label>
-                    <textarea
-                      name="address"
-                      required
-                      rows={3}
-                      value={formData.address}
-                      onChange={handleInputChange}
-                      placeholder={t.checkout.addressPlaceholder}
-                      className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-gold"
-                    />
-                    <p className="text-xs text-muted-foreground mt-2">{t.checkout.addressHint}</p>
-                  </div>
+                  <CodDeliveryForm value={delivery} onChange={setDelivery} />
 
                   <div className="flex gap-4">
                     <Button variant="outline" size="lg" onClick={() => setStep(1)} className="flex-1" disabled={isSubmitting}>
@@ -407,7 +428,7 @@ export default function CheckoutPage() {
                       onClick={submitOrder}
                       size="lg"
                       variant="glow"
-                      disabled={!formData.address.trim() || isSubmitting}
+                      disabled={!isDeliveryComplete(delivery) || isSubmitting}
                       className="flex-1"
                     >
                       {isSubmitting ? t.checkout.sending : t.checkout.confirmCod}

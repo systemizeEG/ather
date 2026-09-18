@@ -131,7 +131,9 @@ export function Navbar() {
   ];
 
   const cartCount = mounted ? items.reduce((total, item) => total + item.quantity, 0) : 0;
-  const isCandidate = session?.user?.role === "CANDIDATE";
+  const storeUser =
+    session?.user?.role === "CUSTOMER" || session?.user?.role === "CANDIDATE" ? session.user : null;
+  const isCandidate = storeUser?.role === "CANDIDATE";
   const accountHref = isCandidate ? "/candidate" : "/orders";
   const accountLabel = isCandidate ? t.navbar.candidateDashboard : t.navbar.myOrders;
   const brand = brandWord(locale);
@@ -235,7 +237,7 @@ export function Navbar() {
 
           <div className="justify-self-end flex items-center gap-0.5 sm:gap-1">
             <div className="relative" ref={accountRef}>
-              {session?.user ? (
+              {storeUser ? (
                 <>
                   <button
                     type="button"
@@ -370,7 +372,7 @@ export function Navbar() {
                   <Search className="w-4 h-4" />
                   {t.navbar.search}
                 </button>
-                {session?.user ? (
+                {storeUser ? (
                   <>
                     <Link
                       href={accountHref}

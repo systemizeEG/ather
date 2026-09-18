@@ -3,10 +3,11 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { ArrowLeft, Save, Upload } from "lucide-react";
+import { ArrowLeft, ArrowRight, Save, Upload } from "lucide-react";
 import Link from "next/link";
 import { updateProduct } from "@/app/actions/admin";
 import { PackageEditor } from "@/components/admin/PackageEditor";
+import { useTranslation } from "@/components/TranslationProvider";
 
 export default function EditProductForm({
   product,
@@ -15,6 +16,8 @@ export default function EditProductForm({
   product: any;
   categories: Array<{ id: string; name: string }>;
 }) {
+  const { t, locale } = useTranslation();
+  const BackIcon = locale === "ar" ? ArrowLeft : ArrowRight;
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [fileUrl, setFileUrl] = useState(product.image || "");
   const [uploading, setUploading] = useState(false);
@@ -35,7 +38,7 @@ export default function EditProductForm({
         setFileUrl(data.url);
       }
     } catch {
-      alert("فشل رفع الصورة");
+      alert(t.admin.uploadFailed);
     } finally {
       setUploading(false);
     }
@@ -47,11 +50,11 @@ export default function EditProductForm({
     <div className="max-w-4xl mx-auto space-y-8">
       <div className="flex justify-between items-center border-b border-border pb-6">
         <div>
-          <h1 className="text-3xl font-bold mb-2">تعديل المنتج</h1>
+          <h1 className="text-3xl font-bold mb-2">{t.admin.editProductTitle}</h1>
         </div>
         <Link href="/admin/products">
           <Button variant="outline">
-            العودة <ArrowLeft className="w-4 h-4 ml-2" />
+            {t.admin.back} <BackIcon className="w-4 h-4 ms-2" />
           </Button>
         </Link>
       </div>
@@ -60,7 +63,7 @@ export default function EditProductForm({
         action={async (formData) => {
           const result = await updateProductWithId(formData);
           if (result && result.error) {
-            alert(`خطأ: ${result.error}`);
+            alert(result.error);
             setIsSubmitting(false);
           }
         }}
@@ -68,42 +71,26 @@ export default function EditProductForm({
         onSubmit={() => setIsSubmitting(true)}
       >
         <div className="bg-card border border-border p-6 rounded-2xl shadow-sm space-y-5">
-          <h2 className="text-xl font-bold mb-4">البيانات الأساسية</h2>
+          <h2 className="text-xl font-bold mb-4">{t.admin.basicData}</h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div>
-              <label className="block text-sm font-medium mb-1.5">
-                اسم المنتج
-              </label>
-              <Input
-                name="title"
-                defaultValue={product.title}
-                required
-                placeholder="مثال: اشتراك فليكس"
-              />
+              <label className="block text-sm font-medium mb-1.5">{t.admin.productName}</label>
+              <Input name="title" defaultValue={product.title} required />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1.5">
-                الرابط المخصص (Slug)
-              </label>
-              <Input
-                name="slug"
-                defaultValue={product.slug}
-                required
-                placeholder="مثال: netflix-1-month"
-                dir="ltr"
-                className="text-right"
-              />
+              <label className="block text-sm font-medium mb-1.5">{t.admin.productSlug}</label>
+              <Input name="slug" defaultValue={product.slug} required dir="ltr" className="text-start" />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1.5">القسم</label>
+              <label className="block text-sm font-medium mb-1.5">{t.admin.colCategory}</label>
               <select
                 name="categoryId"
                 required
                 defaultValue={product.categoryId || ""}
                 className="w-full bg-background border border-border rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-accent"
               >
-                <option value="">اختر القسم</option>
+                <option value="">{t.admin.selectCategory}</option>
                 {categories.map((category) => (
                   <option key={category.id} value={category.id}>
                     {category.name}
@@ -114,21 +101,12 @@ export default function EditProductForm({
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm font-medium mb-1.5">
-                  السعر (ج.م)
+                  {t.admin.priceLabel.replace("{currency}", t.common.currency)}
                 </label>
-                <Input
-                  name="price"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  defaultValue={product.price}
-                  required
-                />
+                <Input name="price" type="number" step="0.01" min="0" defaultValue={product.price} required />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1.5">
-                  السعر قبل الخصم
-                </label>
+                <label className="block text-sm font-medium mb-1.5">{t.admin.comparePrice}</label>
                 <Input
                   name="comparePrice"
                   type="number"
@@ -141,9 +119,7 @@ export default function EditProductForm({
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1.5">
-              وصف قصير
-            </label>
+            <label className="block text-sm font-medium mb-1.5">{t.admin.shortDesc}</label>
             <textarea
               name="shortDescription"
               required
@@ -156,27 +132,20 @@ export default function EditProductForm({
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="bg-card border border-border p-6 rounded-2xl shadow-sm space-y-5">
-            <h2 className="text-xl font-bold mb-4">صورة المنتج</h2>
+            <h2 className="text-xl font-bold mb-4">{t.admin.productImage}</h2>
             <input type="hidden" name="image" value={fileUrl} />
 
             <label className="block cursor-pointer">
               <div className="border-2 border-dashed border-border hover:border-accent/50 rounded-xl p-8 text-center transition-colors">
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleFileUpload}
-                />
+                <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
                 {uploading ? (
-                  <div>جاري الرفع...</div>
+                  <div>{t.admin.uploading}</div>
                 ) : fileUrl ? (
-                  <div className="text-green-500 font-bold">
-                    تم رفع الصورة بنجاح ✓
-                  </div>
+                  <div className="text-green-500 font-bold">{t.admin.imageUploaded}</div>
                 ) : (
                   <div>
                     <Upload className="mx-auto w-8 h-8 text-muted-foreground mb-3" />
-                    <span className="text-muted-foreground">اختر صورة للمنتج</span>
+                    <span className="text-muted-foreground">{t.admin.chooseImage}</span>
                   </div>
                 )}
               </div>
@@ -184,33 +153,25 @@ export default function EditProductForm({
 
             <div className="grid grid-cols-2 gap-4 mt-4">
               <div>
-                <label className="block text-sm font-medium mb-1.5">
-                  مدة التسليم
-                </label>
+                <label className="block text-sm font-medium mb-1.5">{t.admin.deliveryType}</label>
                 <select
                   name="deliveryType"
                   defaultValue={product.deliveryType}
                   className="w-full bg-background border border-border rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-accent"
                 >
-                  <option value="INSTANT">فوري</option>
-                  <option value="MANUAL">يدوي</option>
+                  <option value="INSTANT">{t.admin.instant}</option>
+                  <option value="MANUAL">{t.admin.manual}</option>
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-1.5">
-                  مدة الاشتراك (اختياري)
-                </label>
-                <Input
-                  name="duration"
-                  defaultValue={product.duration || ""}
-                  placeholder="مثال: شهر واحد"
-                />
+                <label className="block text-sm font-medium mb-1.5">{t.admin.subscriptionDuration}</label>
+                <Input name="duration" defaultValue={product.duration || ""} />
               </div>
             </div>
           </div>
 
           <div className="bg-card border border-border p-6 rounded-2xl shadow-sm space-y-5">
-            <h2 className="text-xl font-bold mb-4">وصف تفصيلي</h2>
+            <h2 className="text-xl font-bold mb-4">{t.admin.fullDesc}</h2>
             <textarea
               name="fullDescription"
               rows={8}
@@ -223,18 +184,16 @@ export default function EditProductForm({
         <PackageEditor initialPackages={product.packages || []} />
 
         <div className="bg-card border border-border p-6 rounded-2xl shadow-sm space-y-5">
-          <h2 className="text-xl font-bold mb-4">الحالة والظهور</h2>
+          <h2 className="text-xl font-bold mb-4">{t.admin.statusAndVisibility}</h2>
           <div>
-            <label className="block text-sm font-medium mb-1.5">
-              حالة المنتج
-            </label>
+            <label className="block text-sm font-medium mb-1.5">{t.admin.productStatus}</label>
             <select
               name="status"
               defaultValue={product.status || "ACTIVE"}
               className="w-full bg-background border border-border rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-accent"
             >
-              <option value="ACTIVE">مفعل</option>
-              <option value="DRAFT">غير مفعل</option>
+              <option value="ACTIVE">{t.admin.published}</option>
+              <option value="DRAFT">{t.admin.unpublished}</option>
             </select>
           </div>
           <label className="flex items-center gap-3 cursor-pointer">
@@ -244,7 +203,7 @@ export default function EditProductForm({
               defaultChecked={!!product.isFeatured}
               className="w-5 h-5 accent-accent"
             />
-            <span>عرض في المنتجات المميزة على الصفحة الرئيسية</span>
+            <span>{t.admin.featuredHome}</span>
           </label>
           <label className="flex items-center gap-3 cursor-pointer">
             <input
@@ -253,19 +212,13 @@ export default function EditProductForm({
               defaultChecked={!!product.isPopular}
               className="w-5 h-5 accent-accent"
             />
-            <span>وسم الأكثر طلباً</span>
+            <span>{t.admin.popularTag}</span>
           </label>
         </div>
 
         <div className="flex justify-end pt-4">
-          <Button
-            type="submit"
-            size="lg"
-            variant="glow"
-            isLoading={isSubmitting}
-            className="h-14 px-8 text-lg"
-          >
-            <Save className="w-5 h-5 ml-2" /> حفظ التعديلات
+          <Button type="submit" size="lg" variant="glow" isLoading={isSubmitting} className="h-14 px-8 text-lg">
+            <Save className="w-5 h-5 ms-0 me-2" /> {t.admin.formSave}
           </Button>
         </div>
       </form>

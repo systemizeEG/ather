@@ -9,6 +9,7 @@ import { AdminModal } from "@/components/admin/AdminModal";
 import { AdminPanel } from "@/components/admin/AdminPageHeader";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Plus, Power, Trash2, UserRound } from "lucide-react";
+import { useTranslation } from "@/components/TranslationProvider";
 
 export type DiscountCodeItem = {
   id: string;
@@ -29,26 +30,8 @@ export type DiscountCodeItem = {
   progressPercentage: number | null;
 };
 
-function statusLabel(code: DiscountCodeItem) {
-  if (code.expired) return { text: "منتهي", className: "bg-red-500/10 text-red-600" };
-  if (code.exhausted) return { text: "اكتمل الاستخدام", className: "bg-orange-500/10 text-orange-600" };
-  if (code.isActive) return { text: "مفعل", className: "bg-green-500/10 text-green-600" };
-  return { text: "معطل", className: "bg-muted text-muted-foreground" };
-}
-
-function usageLabel(code: DiscountCodeItem) {
-  if (code.maxUses) return `استُخدم ${code.usedCount} من ${code.maxUses}`;
-  return `استُخدم ${code.usedCount} مرة`;
-}
-
-function targetLabel(code: DiscountCodeItem) {
-  if (code.targetType === "REVENUE") {
-    return `${code.achievedValue ?? 0} من ${code.targetValue ?? 0} ج.م`;
-  }
-  return `${code.achievedValue ?? 0} من ${code.targetValue ?? 0} طلبات`;
-}
-
 export function DiscountCodeManager({ codes }: { codes: DiscountCodeItem[] }) {
+  const { t } = useTranslation();
   const [creating, setCreating] = useState(false);
   const [filter, setFilter] = useState<"all" | "GENERAL" | "CANDIDATE">("all");
 
@@ -56,6 +39,27 @@ export function DiscountCodeManager({ codes }: { codes: DiscountCodeItem[] }) {
     () => (filter === "all" ? codes : codes.filter((code) => code.type === filter)),
     [codes, filter]
   );
+
+  const statusLabel = (code: DiscountCodeItem) => {
+    if (code.expired) return { text: t.admin.expired, className: "bg-red-500/10 text-red-600" };
+    if (code.exhausted) return { text: t.admin.exhausted, className: "bg-orange-500/10 text-orange-600" };
+    if (code.isActive) return { text: t.admin.enabled, className: "bg-green-500/10 text-green-600" };
+    return { text: t.admin.disabled, className: "bg-muted text-muted-foreground" };
+  };
+
+  const usageLabel = (code: DiscountCodeItem) => {
+    if (code.maxUses) {
+      return t.admin.usedFrom.replace("{used}", String(code.usedCount)).replace("{max}", String(code.maxUses));
+    }
+    return t.admin.usedTimes.replace("{used}", String(code.usedCount));
+  };
+
+  const targetLabel = (code: DiscountCodeItem) => {
+    if (code.targetType === "REVENUE") {
+      return `${code.achievedValue ?? 0} ${t.admin.from} ${code.targetValue ?? 0} ${t.common.currency}`;
+    }
+    return `${code.achievedValue ?? 0} ${t.admin.from} ${code.targetValue ?? 0} ${t.admin.ordersUnit}`;
+  };
 
   const chip = (id: typeof filter, label: string) => (
     <button
@@ -75,20 +79,18 @@ export function DiscountCodeManager({ codes }: { codes: DiscountCodeItem[] }) {
     <div className="space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex flex-wrap gap-2">
-          {chip("all", `الكل (${codes.length})`)}
-          {chip("GENERAL", `عامة (${codes.filter((c) => c.type !== "CANDIDATE").length})`)}
-          {chip("CANDIDATE", `مرشحون (${codes.filter((c) => c.type === "CANDIDATE").length})`)}
+          {chip("all", `${t.admin.allTab} (${codes.length})`)}
+          {chip("GENERAL", `${t.admin.generalTab} (${codes.filter((c) => c.type !== "CANDIDATE").length})`)}
+          {chip("CANDIDATE", `${t.admin.candidateTab} (${codes.filter((c) => c.type === "CANDIDATE").length})`)}
         </div>
         <Button onClick={() => setCreating(true)}>
-          <Plus className="w-4 h-4 ml-1.5" /> إضافة كود
+          <Plus className="w-4 h-4 ms-0 me-1.5" /> {t.admin.addCode}
         </Button>
       </div>
 
       <AdminPanel>
         {visible.length === 0 ? (
-          <div className="px-6 py-16 text-center text-muted-foreground">
-            لا توجد أكواد في هذا التبويب.
-          </div>
+          <div className="px-6 py-16 text-center text-muted-foreground">{t.admin.emptyCodes}</div>
         ) : (
           <div className="divide-y divide-border">
             {visible.map((code) => {
@@ -108,13 +110,13 @@ export function DiscountCodeManager({ codes }: { codes: DiscountCodeItem[] }) {
                           {status.text}
                         </span>
                         <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
-                          {candidate ? "مرشح" : "عام"}
+                          {candidate ? t.admin.candidate : t.admin.general}
                         </span>
                       </div>
 
                       {candidate ? (
                         <p className="text-sm text-muted-foreground">
-                          {code.candidateName || "مرشح"}
+                          {code.candidateName || t.admin.candidate}
                           <span className="mx-2 text-border">·</span>
                           {targetLabel(code)}
                         </p>
@@ -124,7 +126,7 @@ export function DiscountCodeManager({ codes }: { codes: DiscountCodeItem[] }) {
                           {code.expiryLabel && (
                             <>
                               <span className="mx-2 text-border">·</span>
-                              {code.expired ? "انتهى" : "ينتهي"} {code.expiryLabel}
+                              {code.expired ? t.admin.ended : t.admin.ends} {code.expiryLabel}
                             </>
                           )}
                         </p>
@@ -143,7 +145,7 @@ export function DiscountCodeManager({ codes }: { codes: DiscountCodeItem[] }) {
                           href={`/admin/candidates/${code.candidateId}`}
                           className="inline-flex items-center justify-center h-9 rounded-full px-3 text-sm font-medium border border-gold/70 hover:bg-gold/15"
                         >
-                          <UserRound className="w-4 h-4 ml-1" /> الملف
+                          <UserRound className="w-4 h-4 ms-0 me-1" /> {t.admin.profile}
                         </Link>
                       )}
                       <Button
@@ -151,20 +153,20 @@ export function DiscountCodeManager({ codes }: { codes: DiscountCodeItem[] }) {
                         size="sm"
                         onClick={() => toggleDiscountCode(code.id, !code.isActive)}
                       >
-                        <Power className="w-4 h-4 ml-1" />
-                        {code.isActive ? "تعطيل" : "تفعيل"}
+                        <Power className="w-4 h-4 ms-0 me-1" />
+                        {code.isActive ? t.admin.disable : t.admin.enable}
                       </Button>
                       <Button
                         variant="ghost"
                         size="sm"
                         className="text-red-500 hover:bg-red-500/10"
                         onClick={async () => {
-                          if (!confirm("حذف هذا الكود؟")) return;
+                          if (!confirm(t.admin.confirmDeleteCode)) return;
                           const result = await deleteDiscountCode(code.id);
                           if (result.error) alert(result.error);
                         }}
                       >
-                        <Trash2 className="w-4 h-4 ml-1" /> حذف
+                        <Trash2 className="w-4 h-4 ms-0 me-1" /> {t.admin.delete}
                       </Button>
                     </div>
                   </div>
@@ -175,7 +177,7 @@ export function DiscountCodeManager({ codes }: { codes: DiscountCodeItem[] }) {
         )}
       </AdminPanel>
 
-      <AdminModal open={creating} title="إضافة كود خصم" onClose={() => setCreating(false)}>
+      <AdminModal open={creating} title={t.admin.addDiscountTitle} onClose={() => setCreating(false)}>
         <AddDiscountForm onDone={() => setCreating(false)} />
       </AdminModal>
     </div>

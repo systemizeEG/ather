@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useTranslation } from "@/components/TranslationProvider";
 
 type Preset = "none" | "week" | "month" | "quarter" | "year" | "custom";
 
@@ -18,6 +19,7 @@ function addDays(date: Date, days: number) {
 }
 
 export function ExpiryDatePicker() {
+  const { t } = useTranslation();
   const today = useMemo(() => {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -47,15 +49,15 @@ export function ExpiryDatePicker() {
 
   return (
     <div className="space-y-3">
-      <label className="block text-sm font-semibold">تاريخ الانتهاء</label>
+      <label className="block text-sm font-semibold">{t.admin.expiryDate}</label>
       <div className="flex flex-wrap gap-2">
-        {chip("none", "بدون انتهاء", () => {
+        {chip("none", t.admin.noExpiry, () => {
           setValue("");
           setPreset("none");
         })}
-        {chip("week", "أسبوع", () => apply(addDays(today, 7), "week"))}
-        {chip("month", "شهر", () => apply(addDays(today, 30), "month"))}
-        {chip("quarter", "3 أشهر", () => apply(addDays(today, 90), "quarter"))}
+        {chip("week", t.admin.week, () => apply(addDays(today, 7), "week"))}
+        {chip("month", t.admin.month, () => apply(addDays(today, 30), "month"))}
+        {chip("quarter", t.admin.quarter, () => apply(addDays(today, 90), "quarter"))}
       </div>
       <input
         type="date"
