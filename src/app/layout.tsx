@@ -6,6 +6,13 @@ import { TranslationProvider } from "@/components/TranslationProvider";
 import { cookies } from "next/headers";
 import { Locale } from "@/lib/dictionaries";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import {
+  SITE_DESCRIPTION,
+  SITE_NAME,
+  SITE_OG_IMAGE,
+  SITE_TITLE,
+  SITE_URL,
+} from "@/lib/constants";
 
 const cairo = Cairo({
   variable: "--font-cairo",
@@ -19,14 +26,23 @@ const elMessiri = El_Messiri({
   weight: ["400", "500", "600", "700"],
 });
 
+const ogImage = {
+  url: SITE_OG_IMAGE,
+  secureUrl: `${SITE_URL}${SITE_OG_IMAGE}`,
+  width: 1200,
+  height: 630,
+  type: "image/png",
+  alt: SITE_TITLE,
+};
+
 export const metadata: Metadata = {
-  metadataBase: new URL("https://ather.store"),
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: "أثر | Ather — إكسسوارات تترك أثراً",
-    template: "%s | أثر",
+    default: SITE_TITLE,
+    template: `%s | ${SITE_NAME}`,
   },
-  description:
-    "متجر أثر لإكسسوارات فاخرة مختارة بعناية. قطع تترك انطباعاً يدوم، مع تغليف أنيق وشحن موثوق داخل مصر.",
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
   keywords: [
     "أثر",
     "Ather",
@@ -35,33 +51,33 @@ export const metadata: Metadata = {
     "حقائب",
     "متجر إلكتروني",
     "accessories",
+    "jewelry",
     "Egypt",
   ],
+  authors: [{ name: SITE_NAME, url: SITE_URL }],
+  creator: SITE_NAME,
+  publisher: SITE_NAME,
+  category: "shopping",
+  robots: { index: true, follow: true },
   openGraph: {
-    title: "أثر | Ather — إكسسوارات تترك أثراً",
-    description:
-      "متجر أثر لإكسسوارات فاخرة مختارة بعناية. قطع تترك انطباعاً يدوم.",
-    url: "https://ather.store",
-    siteName: "أثر | Ather",
-    images: [
-      {
-        url: "/logo.png",
-        width: 1200,
-        height: 1200,
-        alt: "شعار أثر",
-      },
-    ],
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    url: SITE_URL,
+    siteName: SITE_NAME,
+    images: [ogImage],
     locale: "ar_EG",
+    alternateLocale: ["en_US"],
     type: "website",
+    countryName: "Egypt",
   },
   twitter: {
     card: "summary_large_image",
-    title: "أثر | Ather — إكسسوارات تترك أثراً",
-    description: "إكسسوارات فاخرة مختارة بعناية من متجر أثر.",
-    images: ["/logo.png"],
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    images: [ogImage.url],
   },
   alternates: {
-    canonical: "https://ather.store",
+    canonical: SITE_URL,
   },
 };
 
@@ -74,11 +90,30 @@ export default async function RootLayout({
   const localeCookie = cookieStore.get("NEXT_LOCALE");
   const locale = (localeCookie?.value as Locale) || "ar";
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "JewelryStore",
+    name: SITE_NAME,
+    url: SITE_URL,
+    image: `${SITE_URL}${SITE_OG_IMAGE}`,
+    logo: `${SITE_URL}/logo.png`,
+    description: SITE_DESCRIPTION,
+    address: {
+      "@type": "PostalAddress",
+      addressCountry: "EG",
+    },
+    areaServed: "EG",
+  };
+
   return (
     <html lang={locale} dir={locale === "ar" ? "rtl" : "ltr"}>
       <body
         className={`${cairo.variable} ${elMessiri.variable} font-sans antialiased text-foreground bg-background flex flex-col min-h-screen`}
       >
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
         <TranslationProvider initialLocale={locale}>
           <Providers>{children}</Providers>
         </TranslationProvider>

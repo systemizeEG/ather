@@ -9,8 +9,49 @@ import { AddToCartButton } from "./AddToCartButton";
 import { getRequestLocale } from "@/lib/locale";
 import { getTranslation } from "@/lib/dictionaries";
 import { brandWord, localizeFeatures, localizeProduct } from "@/lib/catalog-i18n";
+import { SITE_NAME, SITE_OG_IMAGE, SITE_URL } from "@/lib/constants";
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata(props: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await props.params;
+  const locale = await getRequestLocale();
+  const raw = await getProductBySlug(decodeURIComponent(slug));
+  if (!raw || raw.status !== "ACTIVE") {
+    return { title: SITE_NAME };
+  }
+  const product = localizeProduct(locale, raw);
+  const description = product.shortDescription || product.fullDescription || SITE_NAME;
+  const image = product.image || SITE_OG_IMAGE;
+  const url = `${SITE_URL}/store/${product.slug}`;
+  return {
+    title: product.title,
+    description,
+    openGraph: {
+      title: `${product.title} | ${SITE_NAME}`,
+      description,
+      url,
+      siteName: SITE_NAME,
+      type: "website",
+      images: [
+        {
+          url: image,
+          alt: product.title,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: product.title,
+      description,
+      images: [image],
+    },
+    alternates: { canonical: url },
+  };
+}
 
 export default async function ProductDetailsPage(props: { params: Promise<{ slug: string }> }) {
   const params = await props.params;

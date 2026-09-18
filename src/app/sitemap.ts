@@ -1,10 +1,11 @@
 import { MetadataRoute } from "next";
 import { prisma } from "@/lib/prisma";
+import { SITE_URL } from "@/lib/constants";
 
 export const revalidate = 3600;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = "https://ather.store";
+  const baseUrl = SITE_URL;
 
   let products: { slug: string; updatedAt: Date }[] = [];
   let categories: { slug: string; updatedAt: Date }[] = [];
