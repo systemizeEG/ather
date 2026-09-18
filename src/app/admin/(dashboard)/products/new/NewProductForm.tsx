@@ -8,6 +8,7 @@ import Link from "next/link";
 import { createProduct } from "@/app/actions/admin";
 import { PackageEditor } from "@/components/admin/PackageEditor";
 import { useTranslation } from "@/components/TranslationProvider";
+import { uploadAdminImage } from "@/lib/upload-admin-image";
 
 type CategoryOption = {
   id: string;
@@ -22,20 +23,14 @@ export function NewProductForm({ categories }: { categories: CategoryOption[] })
   const [uploading, setUploading] = useState(false);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files?.[0]) return;
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
     setUploading(true);
-    const formData = new FormData();
-    formData.append("file", e.target.files[0]);
 
     try {
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
-      const data = await res.json();
-      if (data.success) {
-        setFileUrl(data.url);
-      }
+      const url = await uploadAdminImage(file);
+      setFileUrl(url);
     } catch {
       alert(t.admin.uploadFailed);
     } finally {

@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/Input";
 import { slugify } from "@/lib/slug";
 import { ChevronDown, Upload } from "lucide-react";
 import { useTranslation } from "@/components/TranslationProvider";
+import { uploadAdminImage } from "@/lib/upload-admin-image";
 
 export function CategoryForm({
   category,
@@ -36,14 +37,12 @@ export function CategoryForm({
   }, [name, slugTouched]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files?.[0]) return;
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
     setUploading(true);
-    const formData = new FormData();
-    formData.append("file", e.target.files[0]);
     try {
-      const res = await fetch("/api/upload", { method: "POST", body: formData });
-      const data = await res.json();
-      if (data.success) setFileUrl(data.url);
+      setFileUrl(await uploadAdminImage(file));
     } catch {
       alert(t.admin.uploadFailed);
     } finally {
