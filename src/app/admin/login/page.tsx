@@ -2,14 +2,28 @@
 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import { PageTransition, FadeIn } from "@/components/ui/MotionWrapper";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Lock } from "lucide-react";
 
+function withTimeout<T>(promise: Promise<T>, ms: number) {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error("AUTH_TIMEOUT")), ms);
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        clearTimeout(timer);
+        reject(error);
+      }
+    );
+  });
+}
+
 export default function AdminLoginPage() {
-  const router = useRouter();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -20,17 +34,26 @@ export default function AdminLoginPage() {
     setLoading(true);
     setError("");
 
-    const res = await signIn("admin-login", {
-      redirect: false,
-      username,
-      password,
-    });
+    try {
+      const res = await withTimeout(
+        signIn("admin-login", {
+          redirect: false,
+          username,
+          password,
+        }),
+        15000
+      );
 
-    if (res?.error) {
-      setError("اسم المستخدم أو كلمة المرور غير صحيحة");
+      if (!res || res.error || !res.ok) {
+        setError("اسم المستخدم أو كلمة المرور غير صحيحة");
+        return;
+      }
+
+      window.location.assign("/admin/dashboard");
+    } catch {
+      setError("تعذر تسجيل الدخول. حاول مرة أخرى.");
+    } finally {
       setLoading(false);
-    } else {
-      router.push("/admin/dashboard");
     }
   };
 

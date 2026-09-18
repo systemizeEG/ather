@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { productMatchesSearch } from "@/lib/catalog-i18n";
 
 export async function listLiveCategories(take?: number) {
   try {
@@ -41,22 +42,16 @@ export async function listFeaturedProducts(take = 6) {
 
 export async function listActiveProducts(opts?: { q?: string; category?: string }) {
   try {
-    return await prisma.product.findMany({
+    const products = await prisma.product.findMany({
       where: {
         status: "ACTIVE",
         ...(opts?.category ? { category: { slug: opts.category, isActive: true } } : {}),
-        ...(opts?.q
-          ? {
-              OR: [
-                { title: { contains: opts.q, mode: "insensitive" } },
-                { shortDescription: { contains: opts.q, mode: "insensitive" } },
-              ],
-            }
-          : {}),
       },
       include: { category: true },
       orderBy: { createdAt: "desc" },
     });
+    if (!opts?.q?.trim()) return products;
+    return products.filter((product) => productMatchesSearch(product, opts.q));
   } catch (error) {
     console.error("listActiveProducts", error);
     return [];

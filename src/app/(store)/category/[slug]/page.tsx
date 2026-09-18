@@ -3,23 +3,31 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { PageTransition, FadeIn } from "@/components/ui/MotionWrapper";
 import { ProductCard } from "@/components/product/ProductCard";
+import { getRequestLocale } from "@/lib/locale";
+import { getTranslation } from "@/lib/dictionaries";
+import { localizeCategoryName, tx } from "@/lib/catalog-i18n";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata(props: { params: Promise<{ slug: string }> }) {
   const { slug } = await props.params;
+  const locale = await getRequestLocale();
+  const t = getTranslation(locale);
   const category = await prisma.category.findUnique({
     where: { slug: decodeURIComponent(slug) },
   });
+  const name = localizeCategoryName(locale, category?.slug, category?.name);
   return {
-    title: category?.name || "قسم",
-    description: category?.description || `منتجات قسم ${category?.name || ""}`,
+    title: name || t.store.categoryFallback,
+    description: tx(locale, category?.description) || `${t.store.categoryKicker} ${name || ""}`,
   };
 }
 
 export default async function CategoryPage(props: { params: Promise<{ slug: string }> }) {
   const { slug } = await props.params;
   const slugDecoded = decodeURIComponent(slug);
+  const locale = await getRequestLocale();
+  const t = getTranslation(locale);
 
   const category = await prisma.category.findUnique({
     where: { slug: slugDecoded },
@@ -39,20 +47,23 @@ export default async function CategoryPage(props: { params: Promise<{ slug: stri
     }),
   ]);
 
+  const categoryName = localizeCategoryName(locale, category.slug, category.name);
+  const categoryDescription = tx(locale, category.description);
+
   return (
     <PageTransition>
       <div className="container mx-auto px-4 pt-32 pb-20">
         <FadeIn className="mb-12">
-          <p className="text-[11px] tracking-[0.4em] uppercase text-gold mb-3">Category</p>
-          <h1 className="font-display text-4xl md:text-6xl mb-4">{category.name}</h1>
-          {category.description && (
-            <p className="text-muted-foreground text-lg max-w-xl">{category.description}</p>
+          <p className="text-[11px] tracking-[0.4em] uppercase text-gold mb-3">{t.store.categoryKicker}</p>
+          <h1 className="font-display text-4xl md:text-6xl mb-4">{categoryName}</h1>
+          {categoryDescription && (
+            <p className="text-muted-foreground text-lg max-w-xl">{categoryDescription}</p>
           )}
         </FadeIn>
 
         <div className="flex flex-wrap gap-3 mb-10">
           <Link href="/store" className="px-4 py-2 rounded-full text-sm border border-gold/30 hover:border-gold">
-            الكل
+            {t.store.all}
           </Link>
           {categories.map((item) => (
             <Link
@@ -62,7 +73,7 @@ export default async function CategoryPage(props: { params: Promise<{ slug: stri
                 item.id === category.id ? "bg-gold text-truffle border-gold" : "border-gold/30 hover:border-gold"
               }`}
             >
-              {item.name}
+              {localizeCategoryName(locale, item.slug, item.name)}
             </Link>
           ))}
         </div>
@@ -74,7 +85,7 @@ export default async function CategoryPage(props: { params: Promise<{ slug: stri
             ))
           ) : (
             <div className="col-span-full treasure-frame rounded-3xl py-20 text-center text-muted-foreground">
-              لا توجد منتجات في هذا القسم حالياً.
+              {t.store.categoryEmpty}
             </div>
           )}
         </div>

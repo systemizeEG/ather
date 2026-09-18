@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { listFeaturedProducts, listLiveCategories } from "@/lib/catalog";
-import { cookies } from "next/headers";
-import { getTranslation, Locale } from "@/lib/dictionaries";
+import { getTranslation } from "@/lib/dictionaries";
 import { ProductCard } from "@/components/product/ProductCard";
 import { PageTransition, FadeIn } from "@/components/ui/MotionWrapper";
 import { HeroSection } from "@/components/home/HeroSection";
+import { getRequestLocale } from "@/lib/locale";
+import { localizeCategoryName } from "@/lib/catalog-i18n";
 
-export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 const fallbackRooms = [
   { ar: "مجوهرات", en: "Jewelry", note: "01", href: "/store" },
@@ -16,8 +17,7 @@ const fallbackRooms = [
 ];
 
 export default async function HomePage() {
-  const cookieStore = await cookies();
-  const locale = (cookieStore.get("NEXT_LOCALE")?.value as Locale) || "ar";
+  const locale = await getRequestLocale();
   const t = getTranslation(locale);
 
   const [featuredProducts, liveCategories] = await Promise.all([
@@ -29,7 +29,7 @@ export default async function HomePage() {
     liveCategories.length > 0
       ? liveCategories.map((category, index) => ({
           ar: category.name,
-          en: category.name,
+          en: localizeCategoryName("en", category.slug, category.name),
           note: String(index + 1).padStart(2, "0"),
           href: `/category/${category.slug}`,
         }))
@@ -71,7 +71,7 @@ export default async function HomePage() {
         <div className="container mx-auto px-4">
           <FadeIn className="flex justify-between items-end mb-12">
             <div>
-              <p className="text-[11px] tracking-[0.35em] uppercase text-gold mb-3">Lookbook</p>
+              <p className="text-[11px] tracking-[0.35em] uppercase text-gold mb-3">{t.home.lookbook}</p>
               <h2 className="font-display text-3xl md:text-5xl mb-3">{t.home.featuredProducts}</h2>
               <p className="text-muted-foreground">{t.home.featuredProductsDesc}</p>
             </div>

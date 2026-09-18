@@ -2,18 +2,28 @@ import { listActiveCategories, listActiveProducts } from "@/lib/catalog";
 import Link from "next/link";
 import { PageTransition, FadeIn } from "@/components/ui/MotionWrapper";
 import { ProductCard } from "@/components/product/ProductCard";
+import { getRequestLocale } from "@/lib/locale";
+import { getTranslation } from "@/lib/dictionaries";
+import { localizeCategoryName } from "@/lib/catalog-i18n";
 
-export const revalidate = 60;
-export const metadata = {
-  title: "الخزينة",
-  description: "كنوز أثر: مجوهرات، حقائب، وإكسسوارات في خزينة واحدة.",
-};
+export const dynamic = "force-dynamic";
+
+export async function generateMetadata() {
+  const locale = await getRequestLocale();
+  const t = getTranslation(locale);
+  return {
+    title: t.store.title,
+    description: t.store.description,
+  };
+}
 
 export default async function StorePage({
   searchParams,
 }: {
   searchParams: Promise<{ q?: string; category?: string }>;
 }) {
+  const locale = await getRequestLocale();
+  const t = getTranslation(locale);
   const { q, category } = await searchParams;
   const [categories, products] = await Promise.all([
     listActiveCategories(),
@@ -24,10 +34,12 @@ export default async function StorePage({
     <PageTransition>
       <div className="container mx-auto px-4 pt-32 pb-20">
         <FadeIn className="mb-12">
-          <p className="text-[11px] tracking-[0.4em] uppercase text-gold mb-3">The Vault</p>
-          <h1 className="font-display text-4xl md:text-6xl mb-4">الخزينة</h1>
+          <p className="text-[11px] tracking-[0.4em] uppercase text-gold mb-3">{t.store.kicker}</p>
+          <h1 className="font-display text-4xl md:text-6xl mb-4">
+            {q?.trim() ? t.store.resultsFor : t.store.title}
+          </h1>
           <p className="text-muted-foreground text-lg max-w-xl">
-            مجموعة منتقاة من الإكسسوارات — كل قطعة في علبتها.
+            {q?.trim() ? `“${q.trim()}”` : t.store.description}
           </p>
         </FadeIn>
 
@@ -39,7 +51,7 @@ export default async function StorePage({
                 !category ? "bg-gold text-truffle border-gold" : "border-gold/30 hover:border-gold"
               }`}
             >
-              الكل
+              {t.store.all}
             </Link>
             {categories.map((item) => (
               <Link
@@ -49,7 +61,7 @@ export default async function StorePage({
                   category === item.slug ? "bg-gold text-truffle border-gold" : "border-gold/30 hover:border-gold"
                 }`}
               >
-                {item.name}
+                {localizeCategoryName(locale, item.slug, item.name)}
               </Link>
             ))}
           </div>
@@ -62,7 +74,7 @@ export default async function StorePage({
             ))
           ) : (
             <div className="col-span-full treasure-frame rounded-3xl py-20 text-center text-muted-foreground">
-              الخزينة قيد التجهيز
+              {q?.trim() ? t.store.noResults : t.store.empty}
             </div>
           )}
         </div>

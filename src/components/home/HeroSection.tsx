@@ -141,7 +141,7 @@ export function HeroSection({ locale, copy }: { locale: Locale; copy: HeroCopy }
           >
             <motion.img
               src="/logo.png"
-              alt="أثر"
+              alt={locale === "en" ? "Ather" : "أثر"}
               className="h-full w-full object-contain drop-shadow-[0_16px_48px_rgba(201,166,107,0.45)]"
               initial={{ opacity: 0, scale: 0.86 }}
               animate={{ opacity: 1, scale: 1 }}

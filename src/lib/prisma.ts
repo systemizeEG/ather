@@ -18,6 +18,8 @@ function serverlessDatabaseUrl() {
 
   const extras: string[] = [];
   if (onVercel && !/[?&]connection_limit=/.test(next)) extras.push("connection_limit=1");
+  if (onVercel && !/[?&]connect_timeout=/.test(next)) extras.push("connect_timeout=10");
+  if (onVercel && !/[?&]pool_timeout=/.test(next)) extras.push("pool_timeout=10");
   if (
     onVercel &&
     (next.includes("-pooler") || next.includes("pooler.supabase.com")) &&

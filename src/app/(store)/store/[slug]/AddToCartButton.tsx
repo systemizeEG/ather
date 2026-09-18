@@ -4,6 +4,8 @@ import { useState } from "react";
 import { Check, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useCartStore } from "@/store/useCartStore";
+import { useTranslation } from "@/components/TranslationProvider";
+import { formatMoney, tx } from "@/lib/catalog-i18n";
 
 type PurchasePackage = {
   id: string;
@@ -39,6 +41,7 @@ export function AddToCartButton({
   };
   packages?: PurchasePackage[];
 }) {
+  const { t, locale } = useTranslation();
   const [isAdded, setIsAdded] = useState(false);
   const [selectedId, setSelectedId] = useState<string>("single");
   const addToCart = useCartStore((state) => state.addItem);
@@ -46,8 +49,8 @@ export function AddToCartButton({
   const options: Option[] = [
     {
       id: "single",
-      name: "قطعة واحدة",
-      hint: "الخيار العادي",
+      name: t.product.singlePiece,
+      hint: t.product.singleHint,
       price: product.price,
       comparePrice: product.comparePrice,
       pkg: null,
@@ -57,8 +60,11 @@ export function AddToCartButton({
       const saved = Math.max(0, Math.round((pkg.compareAtPrice ?? regularTotal) - pkg.price));
       return {
         id: pkg.id,
-        name: pkg.name,
-        hint: saved > 0 ? `${pkg.quantity} قطع · وفر ${saved} ج.م` : `${pkg.quantity} قطع`,
+        name: tx(locale, pkg.name) || pkg.name,
+        hint:
+          saved > 0
+            ? `${pkg.quantity} ${t.product.pieces} · ${t.product.save} ${saved} ${t.common.currency}`
+            : `${pkg.quantity} ${t.product.pieces}`,
         price: pkg.price,
         comparePrice: pkg.compareAtPrice,
         pkg,
@@ -84,7 +90,7 @@ export function AddToCartButton({
       selected.pkg
         ? {
             id: selected.pkg.id,
-            name: selected.pkg.name,
+            name: tx(locale, selected.pkg.name) || selected.pkg.name,
             quantity: selected.pkg.quantity,
             price: selected.pkg.price,
             compareAtPrice: selected.pkg.compareAtPrice,
@@ -99,7 +105,7 @@ export function AddToCartButton({
     <div className="space-y-5">
       {options.length > 1 && (
         <div>
-          <p className="text-sm font-bold mb-3">اختر الباقة</p>
+          <p className="text-sm font-bold mb-3">{t.product.choosePackage}</p>
           <div className="space-y-2">
             {options.map((option) => {
               const active = selectedId === option.id;
@@ -108,7 +114,7 @@ export function AddToCartButton({
                   key={option.id}
                   type="button"
                   onClick={() => setSelectedId(option.id)}
-                  className={`w-full text-right rounded-2xl border px-4 py-3.5 transition-colors ${
+                  className={`w-full text-start rounded-2xl border px-4 py-3.5 transition-colors ${
                     active
                       ? "border-gold bg-gold/10"
                       : "border-gold/20 bg-card hover:border-gold/50"
@@ -128,11 +134,11 @@ export function AddToCartButton({
                         <div className="text-xs text-muted-foreground">{option.hint}</div>
                       </div>
                     </div>
-                    <div className="text-left shrink-0">
-                      <div className="font-bold">{option.price} ج.م</div>
+                    <div className="text-end shrink-0">
+                      <div className="font-bold">{formatMoney(option.price, t.common.currency)}</div>
                       {option.comparePrice ? (
                         <div className="text-xs text-muted-foreground line-through">
-                          {option.comparePrice} ج.م
+                          {formatMoney(option.comparePrice, t.common.currency)}
                         </div>
                       ) : null}
                     </div>
@@ -145,10 +151,10 @@ export function AddToCartButton({
       )}
 
       <div className="flex items-end gap-3">
-        <span className="text-3xl font-bold gold-text">{selected.price} ج.م</span>
+        <span className="text-3xl font-bold gold-text">{formatMoney(selected.price, t.common.currency)}</span>
         {selected.comparePrice ? (
           <span className="text-base text-muted-foreground line-through mb-1">
-            {selected.comparePrice} ج.م
+            {formatMoney(selected.comparePrice, t.common.currency)}
           </span>
         ) : null}
       </div>
@@ -159,8 +165,8 @@ export function AddToCartButton({
         className="w-full h-14 text-base"
         onClick={handleAddToCart}
       >
-        <ShoppingCart className="w-5 h-5 ml-2" />
-        {isAdded ? "تمت الإضافة للسلة" : "أضف للسلة"}
+        <ShoppingCart className="w-5 h-5 ms-0 me-2" />
+        {isAdded ? t.product.addedToCart : t.product.addToCart}
       </Button>
     </div>
   );

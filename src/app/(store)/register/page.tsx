@@ -8,8 +8,10 @@ import { Button } from "@/components/ui/Button";
 import { UserPlus, User, Mail, Lock, Phone } from "lucide-react";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
+import { useTranslation } from "@/components/TranslationProvider";
 
 export default function RegisterPage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const [formData, setFormData] = useState({
     name: "",
@@ -37,10 +39,9 @@ export default function RegisterPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || "حدث خطأ أثناء التسجيل");
+        throw new Error(data.error || t.auth.registerError);
       }
 
-      // Auto login after registration
       const signInRes = await signIn("customer-login", {
         redirect: false,
         email: formData.email,
@@ -53,8 +54,8 @@ export default function RegisterPage() {
         router.push("/store");
         router.refresh();
       }
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : t.auth.registerError);
       setLoading(false);
     }
   };
@@ -66,76 +67,78 @@ export default function RegisterPage() {
   return (
     <PageTransition className="pt-28 pb-32 min-h-screen flex items-center justify-center bg-background/50 relative overflow-hidden">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-accent/5 via-background to-background z-0"></div>
-      
+
       <div className="container px-4 relative z-10 w-full max-w-md mx-auto">
         <FadeIn>
           <div className="treasure-frame rounded-3xl p-8 sm:p-10 relative overflow-hidden">
             <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-gold to-transparent"></div>
-            
+
             <div className="text-center mb-8">
               <div className="w-16 h-16 bg-gold/15 rounded-full flex items-center justify-center mx-auto mb-6 text-gold border border-gold/40">
                 <UserPlus className="w-8 h-8" />
               </div>
-              <h1 className="text-2xl font-bold mb-2">إنشاء حساب جديد</h1>
-              <p className="text-muted-foreground text-sm">انضم إلينا الآن للتمتع بتجربة تسوق أسهل.</p>
+              <h1 className="text-2xl font-bold mb-2">{t.auth.registerTitle}</h1>
+              <p className="text-muted-foreground text-sm">{t.auth.registerDesc}</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-1.5 text-muted-foreground">الاسم بالكامل</label>
+                <label className="block text-sm font-medium mb-1.5 text-muted-foreground">{t.auth.fullName}</label>
                 <div className="relative">
-                  <User className="absolute right-3 top-3 h-5 w-5 text-muted-foreground" />
-                  <Input 
+                  <User className="absolute end-3 top-3 h-5 w-5 text-muted-foreground" />
+                  <Input
                     name="name"
-                    value={formData.name} 
-                    onChange={handleChange} 
-                    required 
-                    className="bg-background border-border/50 pr-10"
+                    value={formData.name}
+                    onChange={handleChange}
+                    required
+                    className="bg-background border-border/50 pe-10"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1.5 text-muted-foreground">رقم الهاتف <span className="text-xs text-muted-foreground/50">(اختياري)</span></label>
+                <label className="block text-sm font-medium mb-1.5 text-muted-foreground">
+                  {t.auth.phone} <span className="text-xs text-muted-foreground/50">({t.auth.optional})</span>
+                </label>
                 <div className="relative">
-                  <Phone className="absolute right-3 top-3 h-5 w-5 text-muted-foreground" />
-                  <Input 
+                  <Phone className="absolute end-3 top-3 h-5 w-5 text-muted-foreground" />
+                  <Input
                     name="phone"
-                    value={formData.phone} 
-                    onChange={handleChange} 
-                    className="bg-background border-border/50 pr-10"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    className="bg-background border-border/50 pe-10"
                     dir="ltr"
                   />
                 </div>
               </div>
-              
+
               <div>
-                <label className="block text-sm font-medium mb-1.5 text-muted-foreground">البريد الإلكتروني</label>
+                <label className="block text-sm font-medium mb-1.5 text-muted-foreground">{t.auth.email}</label>
                 <div className="relative">
-                  <Mail className="absolute right-3 top-3 h-5 w-5 text-muted-foreground" />
-                  <Input 
+                  <Mail className="absolute end-3 top-3 h-5 w-5 text-muted-foreground" />
+                  <Input
                     type="email"
                     name="email"
-                    value={formData.email} 
-                    onChange={handleChange} 
-                    required 
-                    className="bg-background border-border/50 pr-10"
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
+                    className="bg-background border-border/50 pe-10"
                     dir="ltr"
                   />
                 </div>
               </div>
-              
+
               <div>
-                <label className="block text-sm font-medium mb-1.5 text-muted-foreground">كلمة المرور</label>
+                <label className="block text-sm font-medium mb-1.5 text-muted-foreground">{t.auth.password}</label>
                 <div className="relative">
-                  <Lock className="absolute right-3 top-3 h-5 w-5 text-muted-foreground" />
-                  <Input 
-                    type="password" 
+                  <Lock className="absolute end-3 top-3 h-5 w-5 text-muted-foreground" />
+                  <Input
+                    type="password"
                     name="password"
-                    value={formData.password} 
-                    onChange={handleChange} 
-                    required 
-                    className="bg-background border-border/50 pr-10"
+                    value={formData.password}
+                    onChange={handleChange}
+                    required
+                    className="bg-background border-border/50 pe-10"
                     dir="ltr"
                   />
                 </div>
@@ -148,14 +151,14 @@ export default function RegisterPage() {
               )}
 
               <Button type="submit" size="lg" className="w-full mt-4" variant="glow" isLoading={loading}>
-                إنشاء حساب
+                {t.auth.registerCta}
               </Button>
-              
+
               <div className="text-center mt-6">
                 <p className="text-sm text-muted-foreground">
-                  لديك حساب بالفعل؟{" "}
+                  {t.auth.hasAccount}{" "}
                   <Link href="/login" className="text-gold-deep hover:underline font-medium">
-                    تسجيل الدخول
+                    {t.auth.loginCta}
                   </Link>
                 </p>
               </div>
