@@ -30,10 +30,10 @@ export async function middleware(req: NextRequest) {
     }
   }
 
-  if (path.startsWith("/candidate")) {
+  if (path.startsWith("/candidate") && path !== "/candidate/login") {
     if (!token || token.role !== USER_ROLES.CANDIDATE) {
       const url = req.nextUrl.clone();
-      url.pathname = "/login";
+      url.pathname = "/candidate/login";
       url.search = "";
       return NextResponse.redirect(url);
     }
@@ -43,5 +43,5 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/((?!login).*)", "/candidate/:path*"],
+  matcher: ["/admin/((?!login).*)", "/candidate", "/candidate/((?!login).*)"],
 };

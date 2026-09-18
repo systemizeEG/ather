@@ -12,34 +12,12 @@ import {
   Tags,
   Users,
   X,
+  Globe,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
-
-const groups = [
-  {
-    label: "نظرة عامة",
-    items: [{ name: "الرئيسية", href: "/admin/dashboard", icon: LayoutDashboard }],
-  },
-  {
-    label: "المتجر",
-    items: [
-      { name: "المنتجات", href: "/admin/products", icon: ShoppingBag },
-      { name: "الأقسام", href: "/admin/categories", icon: Tags },
-    ],
-  },
-  {
-    label: "المبيعات",
-    items: [
-      { name: "الطلبات", href: "/admin/orders", icon: ShoppingCart },
-      { name: "أكواد الخصم", href: "/admin/discount-codes", icon: TicketPercent },
-      { name: "المرشحون", href: "/admin/candidates", icon: Users },
-    ],
-  },
-  {
-    label: "النظام",
-    items: [{ name: "الإعدادات", href: "/admin/settings", icon: Settings }],
-  },
-];
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { useTranslation } from "@/components/TranslationProvider";
+import { brandWord } from "@/lib/catalog-i18n";
 
 export function AdminSidebar({
   onNavigate,
@@ -49,15 +27,44 @@ export function AdminSidebar({
   onClose?: () => void;
 }) {
   const pathname = usePathname();
+  const { t, locale } = useTranslation();
+
+  const groups = [
+    {
+      label: t.admin.groupOverview,
+      items: [
+        { name: t.admin.navHome, href: "/admin/dashboard", icon: LayoutDashboard },
+        { name: t.admin.navCandidates, href: "/admin/candidates", icon: Users },
+      ],
+    },
+    {
+      label: t.admin.groupStore,
+      items: [
+        { name: t.admin.navProducts, href: "/admin/products", icon: ShoppingBag },
+        { name: t.admin.navCategories, href: "/admin/categories", icon: Tags },
+      ],
+    },
+    {
+      label: t.admin.groupSales,
+      items: [
+        { name: t.admin.navOrders, href: "/admin/orders", icon: ShoppingCart },
+        { name: t.admin.navDiscounts, href: "/admin/discount-codes", icon: TicketPercent },
+      ],
+    },
+    {
+      label: t.admin.groupSystem,
+      items: [{ name: t.admin.navSettings, href: "/admin/settings", icon: Settings }],
+    },
+  ];
 
   return (
-    <aside className="h-full w-72 bg-card border-l border-gold/20 flex flex-col overflow-hidden">
+    <aside className="h-full w-72 bg-card border-e border-gold/20 flex flex-col overflow-hidden">
       <div className="px-5 pt-6 pb-4 border-b border-gold/15 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <img src="/logo.png" alt="أثر" className="w-10 h-10 object-contain" />
+          <img src="/logo.png" alt={brandWord(locale)} className="w-10 h-10 object-contain" />
           <div>
-            <h2 className="font-display font-bold leading-tight">أثر</h2>
-            <p className="text-xs text-muted-foreground">لوحة التحكم</p>
+            <h2 className="font-display font-bold leading-tight">{brandWord(locale)}</h2>
+            <p className="text-xs text-muted-foreground">{t.admin.panel}</p>
           </div>
         </div>
         {onClose && (
@@ -65,7 +72,7 @@ export function AdminSidebar({
             type="button"
             onClick={onClose}
             className="lg:hidden w-9 h-9 rounded-full hover:bg-muted flex items-center justify-center"
-            aria-label="إغلاق القائمة"
+            aria-label={t.admin.closeMenu}
           >
             <X className="w-5 h-5" />
           </button>
@@ -105,13 +112,21 @@ export function AdminSidebar({
         ))}
       </nav>
 
-      <div className="p-3 border-t border-border">
+      <div className="p-3 border-t border-border space-y-2">
+        <div className="px-1">
+          <p className="px-2 mb-1.5 flex items-center gap-2 text-[11px] font-semibold text-muted-foreground tracking-wide">
+            <Globe className="w-3.5 h-3.5" />
+            {t.admin.language}
+          </p>
+          <LanguageSwitcher variant="segmented" />
+        </div>
         <button
+          type="button"
           onClick={() => signOut({ callbackUrl: "/admin/login" })}
-          className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-red-500 hover:bg-red-500/10 transition-colors font-medium"
+          className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-red-500 hover:bg-red-500/10 transition-colors font-medium cursor-pointer"
         >
           <LogOut className="w-5 h-5" />
-          خروج
+          {t.admin.logout}
         </button>
       </div>
     </aside>

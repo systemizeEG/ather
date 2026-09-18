@@ -6,7 +6,7 @@ import { useCartStore } from "@/store/useCartStore";
 import { PageTransition, FadeIn } from "@/components/ui/MotionWrapper";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { Upload, CheckCircle2, ArrowLeft, ArrowRight, ShieldCheck, CreditCard } from "lucide-react";
+import { Upload, CheckCircle2, ArrowLeft, ArrowRight, ShieldCheck, CreditCard, Banknote } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createOrder, getStoreSettings } from "@/app/actions/order";
@@ -14,6 +14,7 @@ import { validateDiscountCode } from "@/app/actions/discount";
 import { StoreImage } from "@/components/ui/StoreImage";
 import { useTranslation } from "@/components/TranslationProvider";
 import { formatMoney, localizeProductTitle, tx } from "@/lib/catalog-i18n";
+import { PAYMENT_METHODS } from "@/lib/constants";
 
 export default function CheckoutPage() {
   const { t, locale } = useTranslation();
@@ -43,11 +44,15 @@ export default function CheckoutPage() {
     whatsapp: (session?.user as any)?.phone || "",
     email: session?.user?.email || "",
     notes: "",
+    address: "",
   });
 
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<typeof PAYMENT_METHODS[keyof typeof PAYMENT_METHODS]>(
+    PAYMENT_METHODS.INSTAPAY
+  );
 
   useEffect(() => {
     setOrderId(`ORD-${Math.random().toString(36).substring(2, 6).toUpperCase()}`);
@@ -96,35 +101,47 @@ export default function CheckoutPage() {
     setStep(2);
   };
 
+  const isCod = paymentMethod === PAYMENT_METHODS.CASH_ON_DELIVERY;
+
   const submitOrder = async () => {
-    if (!file) return;
+    if (isCod && !formData.address.trim()) return;
+    if (!isCod && !file) return;
     setIsSubmitting(true);
 
     try {
-      setIsUploading(true);
-      const fileData = new FormData();
-      fileData.append("file", file);
+      let paymentScreenshot: string | null = null;
 
-      const uploadRes = await fetch("/api/upload?type=receipt", {
-        method: "POST",
-        body: fileData,
-      });
-      const uploadJSON = await uploadRes.json();
-      setIsUploading(false);
+      if (!isCod && file) {
+        setIsUploading(true);
+        const fileData = new FormData();
+        fileData.append("file", file);
 
-      if (!uploadJSON.success) {
-        throw new Error("Upload failed");
+        const uploadRes = await fetch("/api/upload?type=receipt", {
+          method: "POST",
+          body: fileData,
+        });
+        const uploadJSON = await uploadRes.json();
+        setIsUploading(false);
+
+        if (!uploadJSON.success) {
+          throw new Error("Upload failed");
+        }
+        paymentScreenshot = uploadJSON.url;
       }
 
       const orderData = {
         orderId,
-        ...formData,
+        customerName: formData.customerName,
+        phone: formData.phone,
+        whatsapp: formData.whatsapp,
+        email: formData.email,
+        notes: formData.address.trim() || formData.notes || undefined,
         subtotal: getCartTotal(),
         total: getTotalAfterDiscount(),
         discountCode: appliedDiscount?.code || null,
         discountAmount: getDiscountAmount(),
-        paymentMethod: "INSTAPAY",
-        paymentScreenshot: uploadJSON.url,
+        paymentMethod,
+        paymentScreenshot,
         items: items.map((item) => ({
           productId: item.product.id,
           titleSnapshot: item.product.title,
@@ -163,7 +180,9 @@ export default function CheckoutPage() {
       wa = "20" + wa;
     }
     return `https://wa.me/${wa}?text=${encodeURIComponent(
-      `${t.checkout.whatsappMessage}\n\n${t.checkout.orderNumber}: ${orderId}\n${t.checkout.name}: ${formData.customerName}`
+      `${isCod ? t.checkout.whatsappMessageCod : t.checkout.whatsappMessage}\n\n${t.checkout.orderNumber}: ${orderId}\n${t.checkout.name}: ${formData.customerName}${
+        formData.address.trim() ? `\n${t.checkout.address}: ${formData.address.trim()}` : ""
+      }`
     )}`;
   })();
 
@@ -312,15 +331,41 @@ export default function CheckoutPage() {
 
         {step === 2 && (
           <FadeIn className="max-w-xl mx-auto">
-            <div className="bg-card border border-accent/30 rounded-3xl p-8 shadow-[0_0_30px_rgba(0,240,255,0.05)] relative overflow-hidden">
-              <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-accent via-blue-500 to-green-500"></div>
+            <div className="bg-card border border-gold/30 rounded-3xl p-8 relative overflow-hidden">
+              <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-gold via-gold-deep to-gold"></div>
 
               <div className="text-center mb-8">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-gold/15 text-gold-deep rounded-full mb-4">
-                  <CreditCard className="w-8 h-8" />
-                </div>
-                <h2 className="text-2xl font-bold mb-2">{t.checkout.payTitle}</h2>
-                <p className="text-muted-foreground">{t.checkout.payDesc}</p>
+                <h2 className="text-2xl font-bold mb-2">{t.checkout.chooseMethod}</h2>
+                <p className="text-muted-foreground">{formatMoney(getTotalAfterDiscount(), t.common.currency)}</p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod(PAYMENT_METHODS.INSTAPAY)}
+                  className={`text-start rounded-2xl border p-4 transition-colors cursor-pointer ${
+                    !isCod
+                      ? "border-gold bg-gold/10"
+                      : "border-border hover:border-gold/40"
+                  }`}
+                >
+                  <CreditCard className={`w-6 h-6 mb-2 ${!isCod ? "text-gold-deep" : "text-muted-foreground"}`} />
+                  <div className="font-bold">{t.checkout.methodInstapay}</div>
+                  <div className="text-xs text-muted-foreground mt-1">{t.checkout.methodInstapayHint}</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod(PAYMENT_METHODS.CASH_ON_DELIVERY)}
+                  className={`text-start rounded-2xl border p-4 transition-colors cursor-pointer ${
+                    isCod
+                      ? "border-gold bg-gold/10"
+                      : "border-border hover:border-gold/40"
+                  }`}
+                >
+                  <Banknote className={`w-6 h-6 mb-2 ${isCod ? "text-gold-deep" : "text-muted-foreground"}`} />
+                  <div className="font-bold">{t.checkout.methodCod}</div>
+                  <div className="text-xs text-muted-foreground mt-1">{t.checkout.methodCodHint}</div>
+                </button>
               </div>
 
               <div className="bg-background border border-border rounded-xl p-5 mb-8 space-y-4">
@@ -328,65 +373,112 @@ export default function CheckoutPage() {
                   <span className="text-muted-foreground">{t.checkout.orderId}</span>
                   <span className="font-mono font-bold text-gold-deep">{orderId}</span>
                 </div>
-                <div className="flex justify-between py-2 border-b border-border/50">
+                <div className="flex justify-between py-2 items-center">
                   <span className="text-muted-foreground">{t.checkout.amountDue}</span>
                   <span className="font-bold text-2xl">{formatMoney(getTotalAfterDiscount(), t.common.currency)}</span>
                 </div>
-                <div className="flex justify-between py-2 border-b border-border/50 items-center">
-                  <span className="text-muted-foreground">{t.checkout.sellerAccount}</span>
-                  <div className="text-end" dir="ltr">
-                    <span className="font-bold bg-muted px-2 py-1 rounded-md cursor-copy text-gold-deep">
-                      {settings?.instapayAccount || "instapay@example"}
-                    </span>
-                    {settings?.instapayReceiverName && (
-                      <div className="text-xs text-muted-foreground mt-1 text-start w-full">
-                        {t.checkout.inNameOf}: {settings.instapayReceiverName}
-                      </div>
-                    )}
+              </div>
+
+              {isCod ? (
+                <>
+                  <div className="mb-8">
+                    <h3 className="text-lg font-bold mb-1">{t.checkout.codTitle}</h3>
+                    <p className="text-sm text-muted-foreground mb-4">{t.checkout.codDesc}</p>
+                    <label className="block text-sm font-medium mb-2">
+                      {t.checkout.address} <span className="text-red-500">*</span>
+                    </label>
+                    <textarea
+                      name="address"
+                      required
+                      rows={3}
+                      value={formData.address}
+                      onChange={handleInputChange}
+                      placeholder={t.checkout.addressPlaceholder}
+                      className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-gold"
+                    />
+                    <p className="text-xs text-muted-foreground mt-2">{t.checkout.addressHint}</p>
                   </div>
-                </div>
-              </div>
 
-              <div className="mb-8">
-                <label className="block text-sm font-medium mb-3">
-                  {t.checkout.uploadReceipt} <span className="text-red-500">*</span>
-                </label>
-                <div className="border-2 border-dashed border-border rounded-xl p-8 text-center hover:border-accent/50 transition-colors bg-background relative">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileChange}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                  />
-                  {file ? (
-                    <div className="flex flex-col items-center">
-                      <CheckCircle2 className="w-8 h-8 text-green-500 mb-2" />
-                      <span className="font-medium text-green-500">{file.name}</span>
-                      <span className="text-xs text-muted-foreground mt-1">{t.checkout.clickToChange}</span>
+                  <div className="flex gap-4">
+                    <Button variant="outline" size="lg" onClick={() => setStep(1)} className="flex-1" disabled={isSubmitting}>
+                      {t.checkout.editData}
+                    </Button>
+                    <Button
+                      onClick={submitOrder}
+                      size="lg"
+                      variant="glow"
+                      disabled={!formData.address.trim() || isSubmitting}
+                      className="flex-1"
+                    >
+                      {isSubmitting ? t.checkout.sending : t.checkout.confirmCod}
+                    </Button>
+                  </div>
+
+                  <div className="mt-6 flex items-start gap-3 bg-muted/30 p-4 rounded-lg">
+                    <ShieldCheck className="w-5 h-5 text-gold-deep shrink-0 mt-0.5" />
+                    <p className="text-xs text-muted-foreground leading-relaxed">{t.checkout.codReviewNote}</p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="bg-background border border-border rounded-xl p-5 mb-8">
+                    <div className="flex justify-between py-2 items-center">
+                      <span className="text-muted-foreground">{t.checkout.sellerAccount}</span>
+                      <div className="text-end" dir="ltr">
+                        <span className="font-bold bg-muted px-2 py-1 rounded-md cursor-copy text-gold-deep">
+                          {settings?.instapayAccount || "instapay@example"}
+                        </span>
+                        {settings?.instapayReceiverName && (
+                          <div className="text-xs text-muted-foreground mt-1 text-start w-full">
+                            {t.checkout.inNameOf}: {settings.instapayReceiverName}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  ) : (
-                    <div className="flex flex-col items-center pointer-events-none">
-                      <Upload className="w-10 h-10 text-muted-foreground mb-3" />
-                      <span className="font-medium">{t.checkout.uploadCta}</span>
-                      <span className="text-xs text-muted-foreground mt-1">JPEG, PNG, JPG</span>
+                  </div>
+
+                  <div className="mb-8">
+                    <label className="block text-sm font-medium mb-3">
+                      {t.checkout.uploadReceipt} <span className="text-red-500">*</span>
+                    </label>
+                    <div className="border-2 border-dashed border-border rounded-xl p-8 text-center hover:border-accent/50 transition-colors bg-background relative">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileChange}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                      />
+                      {file ? (
+                        <div className="flex flex-col items-center">
+                          <CheckCircle2 className="w-8 h-8 text-green-500 mb-2" />
+                          <span className="font-medium text-green-500">{file.name}</span>
+                          <span className="text-xs text-muted-foreground mt-1">{t.checkout.clickToChange}</span>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center pointer-events-none">
+                          <Upload className="w-10 h-10 text-muted-foreground mb-3" />
+                          <span className="font-medium">{t.checkout.uploadCta}</span>
+                          <span className="text-xs text-muted-foreground mt-1">JPEG, PNG, JPG</span>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              </div>
+                  </div>
 
-              <div className="flex gap-4">
-                <Button variant="outline" size="lg" onClick={() => setStep(1)} className="flex-1" disabled={isSubmitting}>
-                  {t.checkout.editData}
-                </Button>
-                <Button onClick={submitOrder} size="lg" variant="glow" disabled={!file || isSubmitting} className="flex-1">
-                  {isSubmitting || isUploading ? t.checkout.sending : t.checkout.confirmSend}
-                </Button>
-              </div>
+                  <div className="flex gap-4">
+                    <Button variant="outline" size="lg" onClick={() => setStep(1)} className="flex-1" disabled={isSubmitting}>
+                      {t.checkout.editData}
+                    </Button>
+                    <Button onClick={submitOrder} size="lg" variant="glow" disabled={!file || isSubmitting} className="flex-1">
+                      {isSubmitting || isUploading ? t.checkout.sending : t.checkout.confirmSend}
+                    </Button>
+                  </div>
 
-              <div className="mt-6 flex items-start gap-3 bg-muted/30 p-4 rounded-lg">
-                <ShieldCheck className="w-5 h-5 text-gold-deep shrink-0 mt-0.5" />
-                <p className="text-xs text-muted-foreground leading-relaxed">{t.checkout.reviewNote}</p>
-              </div>
+                  <div className="mt-6 flex items-start gap-3 bg-muted/30 p-4 rounded-lg">
+                    <ShieldCheck className="w-5 h-5 text-gold-deep shrink-0 mt-0.5" />
+                    <p className="text-xs text-muted-foreground leading-relaxed">{t.checkout.reviewNote}</p>
+                  </div>
+                </>
+              )}
             </div>
           </FadeIn>
         )}
@@ -402,12 +494,12 @@ export default function CheckoutPage() {
               {t.checkout.yourOrder}{" "}
               <span className="font-mono font-bold text-foreground bg-muted px-2 py-1 rounded inline-block">{orderId}</span>
               . <br />
-              {t.checkout.successDesc}
+              {isCod ? t.checkout.successDescCod : t.checkout.successDesc}
             </p>
 
             <div className="treasure-frame rounded-2xl p-6 mb-8">
               <h3 className="font-bold mb-2">{t.checkout.nextTitle}</h3>
-              <p className="text-sm text-muted-foreground mb-4">{t.checkout.nextDesc}</p>
+              <p className="text-sm text-muted-foreground mb-4">{isCod ? t.checkout.nextDescCod : t.checkout.nextDesc}</p>
 
               <a href={whatsappHref} target="_blank" rel="noreferrer" className="block w-full">
                 <Button size="lg" className="w-full bg-green-500 text-white hover:bg-green-600">

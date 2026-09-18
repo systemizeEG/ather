@@ -134,8 +134,10 @@ export default async function AdminOrderDetailsPage(props: { params: Promise<{ i
               )}
               {order.notes && (
                 <div className="bg-muted p-3 rounded-lg mt-2">
-                  <p className="text-xs text-muted-foreground mb-1">ملاحظات العميل:</p>
-                  <p className="text-sm">{order.notes}</p>
+                  <p className="text-xs text-muted-foreground mb-1">
+                    {order.paymentMethod === "CASH_ON_DELIVERY" ? "عنوان التوصيل:" : "ملاحظات العميل:"}
+                  </p>
+                  <p className="text-sm whitespace-pre-wrap">{order.notes}</p>
                 </div>
               )}
             </div>
@@ -146,9 +148,15 @@ export default async function AdminOrderDetailsPage(props: { params: Promise<{ i
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <p className="text-sm text-muted-foreground">طريقة الدفع</p>
-                <p className="font-bold bg-accent/10 text-accent px-2 py-1 rounded">InstaPay</p>
+                <p className="font-bold bg-accent/10 text-accent px-2 py-1 rounded">
+                  {order.paymentMethod === "CASH_ON_DELIVERY" ? "الدفع عند الاستلام" : "InstaPay"}
+                </p>
               </div>
-              {displayImageUrl ? (
+              {order.paymentMethod === "CASH_ON_DELIVERY" ? (
+                <div className="bg-gold/10 text-gold-deep p-4 rounded-xl text-sm">
+                  الدفع نقداً عند التسليم. لا يوجد إيصال تحويل.
+                </div>
+              ) : displayImageUrl ? (
                 <div>
                   <p className="text-sm text-muted-foreground mb-2">صورة التحويل المرفقة:</p>
                   <a href={displayImageUrl} target="_blank" rel="noreferrer" className="block relative aspect-[4/5] bg-muted rounded-xl overflow-hidden border border-border hover:border-accent/50 transition-colors group cursor-zoom-in">

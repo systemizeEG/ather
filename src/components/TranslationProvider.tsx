@@ -1,7 +1,7 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from "react";
-import { dictionaries, Locale, getTranslation } from "@/lib/dictionaries";
+import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { dictionaries, getTranslation, type Locale } from "@/lib/dictionaries";
 
 type TranslationContextType = {
   locale: Locale;
@@ -9,7 +9,15 @@ type TranslationContextType = {
   t: typeof dictionaries.ar;
 };
 
-const TranslationContext = createContext<TranslationContextType | null>(null);
+function bundle(locale: Locale): TranslationContextType {
+  return {
+    locale,
+    setLocale: () => {},
+    t: getTranslation(locale),
+  };
+}
+
+const TranslationContext = createContext<TranslationContextType>(bundle("ar"));
 
 export function TranslationProvider({
   children,
@@ -21,22 +29,23 @@ export function TranslationProvider({
   const [locale, setLocale] = useState<Locale>(initialLocale);
 
   useEffect(() => {
-    document.cookie = `NEXT_LOCALE=${locale}; path=/; max-age=31536000`;
+    setLocale(initialLocale);
+  }, [initialLocale]);
+
+  useEffect(() => {
+    document.cookie = `NEXT_LOCALE=${locale}; path=/; max-age=31536000; SameSite=Lax`;
     document.documentElement.lang = locale;
     document.documentElement.dir = locale === "ar" ? "rtl" : "ltr";
   }, [locale]);
 
-  return (
-    <TranslationContext.Provider value={{ locale, setLocale, t: getTranslation(locale) }}>
-      {children}
-    </TranslationContext.Provider>
+  const value = useMemo(
+    () => ({ locale, setLocale, t: getTranslation(locale) }),
+    [locale]
   );
+
+  return <TranslationContext.Provider value={value}>{children}</TranslationContext.Provider>;
 }
 
 export function useTranslation() {
-  const context = useContext(TranslationContext);
-  if (!context) {
-    throw new Error("useTranslation must be used within a TranslationProvider");
-  }
-  return context;
+  return useContext(TranslationContext);
 }

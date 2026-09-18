@@ -204,7 +204,7 @@ export default async function ProductDetailsPage(props: { params: Promise<{ slug
             <h2 className="font-display text-2xl mb-6">{t.product.related}</h2>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {relatedProducts.map((item) => (
-                <ProductCard key={item.id} product={item} />
+                <ProductCard key={item.id} product={item} locale={locale} />
               ))}
             </div>
           </div>

@@ -138,7 +138,11 @@ export default function TrackOrderPage() {
                   <div className="space-y-2">
                     <p>
                       <span className="text-muted-foreground">{t.track.payment}:</span>{" "}
-                      <span className="font-medium">InstaPay</span>
+                      <span className="font-medium">
+                        {order.paymentMethod === "CASH_ON_DELIVERY"
+                          ? t.checkout.methodCod
+                          : t.checkout.methodInstapay}
+                      </span>
                     </p>
                     <p>
                       <span className="text-muted-foreground">{t.track.date}:</span>{" "}
@@ -155,6 +159,13 @@ export default function TrackOrderPage() {
                   </div>
                 </div>
               </div>
+
+              {order.notes && (
+                <p>
+                  <span className="text-muted-foreground">{t.checkout.address}:</span>{" "}
+                  <span className="font-medium whitespace-pre-wrap">{order.notes}</span>
+                </p>
+              )}
 
               {order.adminNote && (
                 <div className="bg-accent/10 border border-accent/20 rounded-xl p-4 text-gold-deep-foreground">

@@ -2,21 +2,25 @@
 
 import Link from "next/link";
 import { toggleCandidate } from "@/app/actions/candidates";
+import { useTranslation } from "@/components/TranslationProvider";
 
 export function CandidateActions({ id, isActive }: { id: string; isActive: boolean }) {
+  const { t } = useTranslation();
+
   return (
     <div className="flex items-center gap-3">
       <Link href={`/admin/candidates/${id}`} className="text-sm font-bold text-accent">
-        عرض
+        {t.admin.view}
       </Link>
       <Link href={`/admin/candidates/${id}/edit`} className="text-sm font-bold text-foreground">
-        تعديل
+        {t.admin.edit}
       </Link>
       <button
-        className="text-sm font-bold text-orange-500"
+        type="button"
+        className="text-sm font-bold text-orange-500 cursor-pointer"
         onClick={() => toggleCandidate(id, !isActive)}
       >
-        {isActive ? "تعطيل" : "تفعيل"}
+        {isActive ? t.admin.disable : t.admin.enable}
       </button>
     </div>
   );

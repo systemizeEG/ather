@@ -2,9 +2,8 @@ import type { Metadata } from "next";
 import { Cairo, El_Messiri } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
-import { TranslationProvider } from "@/components/TranslationProvider";
 import { cookies } from "next/headers";
-import { Locale } from "@/lib/dictionaries";
+import { parseLocale } from "@/lib/dictionaries";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
 import {
@@ -88,8 +87,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const cookieStore = await cookies();
-  const localeCookie = cookieStore.get("NEXT_LOCALE");
-  const locale = (localeCookie?.value as Locale) || "ar";
+  const locale = parseLocale(cookieStore.get("NEXT_LOCALE")?.value);
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -115,9 +113,7 @@ export default async function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-        <TranslationProvider initialLocale={locale}>
-          <Providers>{children}</Providers>
-        </TranslationProvider>
+        <Providers locale={locale}>{children}</Providers>
         <SpeedInsights />
         <Analytics />
       </body>

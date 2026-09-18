@@ -9,6 +9,7 @@ import { useCartStore } from "@/store/useCartStore";
 import { CornerMarks } from "@/components/ui/Treasure";
 import { useTranslation } from "@/components/TranslationProvider";
 import { formatMoney, localizeProduct } from "@/lib/catalog-i18n";
+import type { Locale } from "@/lib/dictionaries";
 
 export type ProductCardProduct = {
   id: string;
@@ -23,8 +24,18 @@ export type ProductCardProduct = {
   category?: { name: string; slug: string } | null;
 };
 
-export function ProductCard({ product, index = 0 }: { product: ProductCardProduct; index?: number }) {
-  const { t, locale } = useTranslation();
+export function ProductCard({
+  product,
+  index = 0,
+  locale: localeProp,
+}: {
+  product: ProductCardProduct;
+  index?: number;
+  locale?: Locale;
+}) {
+  const translation = useTranslation();
+  const locale = translation.locale || localeProp || "ar";
+  const t = translation.t;
   const localized = localizeProduct(locale, product);
   const addItem = useCartStore((state) => state.addItem);
 

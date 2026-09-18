@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { USER_ROLES } from "@/lib/constants";
+import { USER_ROLES, PAYMENT_METHODS } from "@/lib/constants";
 
 function round2(value: number) {
   return Math.round(value * 100) / 100;
@@ -21,7 +21,7 @@ export async function createOrder(data: {
   discountCode?: string | null;
   discountAmount?: number;
   paymentMethod: string;
-  paymentScreenshot: string;
+  paymentScreenshot?: string | null;
   items: Array<{
     productId: string;
     titleSnapshot: string;
@@ -113,6 +113,19 @@ export async function createOrder(data: {
         }
       }
 
+      const paymentMethod =
+        data.paymentMethod === PAYMENT_METHODS.CASH_ON_DELIVERY
+          ? PAYMENT_METHODS.CASH_ON_DELIVERY
+          : PAYMENT_METHODS.INSTAPAY;
+
+      if (paymentMethod === PAYMENT_METHODS.INSTAPAY && !data.paymentScreenshot) {
+        throw new Error("PAYMENT_RECEIPT_REQUIRED");
+      }
+
+      if (paymentMethod === PAYMENT_METHODS.CASH_ON_DELIVERY && !data.notes?.trim()) {
+        throw new Error("DELIVERY_ADDRESS_REQUIRED");
+      }
+
       const total = round2(Math.max(0, subtotal - discountAmount));
 
       return tx.order.create({
@@ -128,9 +141,10 @@ export async function createOrder(data: {
           total,
           discountCode,
           discountAmount,
-          paymentMethod: data.paymentMethod,
-          paymentScreenshot: data.paymentScreenshot,
-          status: "PENDING_REVIEW",
+          paymentMethod,
+          paymentScreenshot: paymentMethod === PAYMENT_METHODS.CASH_ON_DELIVERY ? null : data.paymentScreenshot,
+          status:
+            paymentMethod === PAYMENT_METHODS.CASH_ON_DELIVERY ? "PROCESSING" : "PENDING_REVIEW",
           items: {
             create: resolvedItems,
           },

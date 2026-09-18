@@ -20,6 +20,11 @@ export const TARGET_TYPES = {
 
 export const QUALIFYING_ORDER_STATUSES = ["COMPLETED"] as const;
 
+export const PAYMENT_METHODS = {
+  INSTAPAY: "INSTAPAY",
+  CASH_ON_DELIVERY: "CASH_ON_DELIVERY",
+} as const;
+
 export const UNCATEGORIZED_SLUG = "uncategorized";
 export const UNCATEGORIZED_NAME = "بدون قسم";
 

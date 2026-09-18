@@ -2,21 +2,24 @@
 
 import { useState } from "react";
 import { Menu } from "lucide-react";
-import { AdminSidebar } from "@/components/admin/AdminSidebar";
+import { CandidateSidebar } from "@/components/candidate/CandidateSidebar";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { useTranslation } from "@/components/TranslationProvider";
-import { brandWord } from "@/lib/catalog-i18n";
 
-export function AdminChrome({ children }: { children: React.ReactNode }) {
+export function CandidateChrome({
+  name,
+  children,
+}: {
+  name: string;
+  children: React.ReactNode;
+}) {
   const [menuOpen, setMenuOpen] = useState(false);
   const { t, locale } = useTranslation();
 
   return (
-    <div className="min-h-screen bg-pearl flex" dir={locale === "ar" ? "rtl" : "ltr"}>
-      <div className="hidden lg:block w-72 shrink-0">
-        <div className="fixed inset-y-0 start-0 h-screen z-40">
-          <AdminSidebar />
-        </div>
+    <div className="min-h-screen bg-background flex" dir={locale === "ar" ? "rtl" : "ltr"}>
+      <div className="hidden lg:block w-64 shrink-0 relative">
+        <CandidateSidebar name={name} />
       </div>
 
       {menuOpen && (
@@ -28,13 +31,17 @@ export function AdminChrome({ children }: { children: React.ReactNode }) {
             aria-label={t.admin.closeMenu}
           />
           <div className="absolute start-0 top-0 h-full shadow-2xl">
-            <AdminSidebar onNavigate={() => setMenuOpen(false)} onClose={() => setMenuOpen(false)} />
+            <CandidateSidebar
+              name={name}
+              onNavigate={() => setMenuOpen(false)}
+              onClose={() => setMenuOpen(false)}
+            />
           </div>
         </div>
       )}
 
-      <main className="flex-1 flex flex-col min-w-0">
-        <header className="lg:hidden h-16 border-b border-gold/20 bg-card/90 backdrop-blur flex items-center px-4 gap-3 sticky top-0 z-30">
+      <main className="flex-1 flex flex-col min-w-0 pb-12">
+        <header className="h-16 border-b border-border bg-card/50 backdrop-blur flex items-center px-4 gap-3 lg:hidden sticky top-0 z-30">
           <button
             type="button"
             onClick={() => setMenuOpen(true)}
@@ -43,10 +50,10 @@ export function AdminChrome({ children }: { children: React.ReactNode }) {
           >
             <Menu className="w-5 h-5" />
           </button>
-          <h2 className="font-display font-bold flex-1">{brandWord(locale)} · {t.admin.panel}</h2>
+          <h2 className="font-bold text-lg flex-1">{t.candidateDash.title}</h2>
           <LanguageSwitcher />
         </header>
-        <div className="p-4 sm:p-6 lg:p-8 flex-1">{children}</div>
+        <div className="p-6 md:p-8 flex-1">{children}</div>
       </main>
     </div>
   );
