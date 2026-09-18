@@ -11,6 +11,7 @@ import {
   TicketPercent,
   Tags,
   Users,
+  UserCog,
   X,
   Globe,
 } from "lucide-react";
@@ -52,7 +53,10 @@ export function AdminSidebar({
     },
     {
       label: t.admin.groupSystem,
-      items: [{ name: t.admin.navSettings, href: "/admin/settings", icon: Settings }],
+      items: [
+        { name: t.admin.navAdmins, href: "/admin/admins", icon: UserCog },
+        { name: t.admin.navSettings, href: "/admin/settings", icon: Settings },
+      ],
     },
   ];
 

@@ -2,9 +2,9 @@
 
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
-import { supabaseAdmin } from "@/lib/supabase";
 import { createAdminAuthClient } from "@/lib/supabase/server";
 import { signOutAdminSession } from "@/lib/supabase/admin-session";
+import { ensureSupabaseAdminUser } from "@/lib/supabase/provision-admin";
 
 async function findAdminAccount(identifier: string) {
   const value = identifier.trim();
@@ -18,42 +18,6 @@ async function findAdminAccount(identifier: string) {
       ],
     },
   });
-}
-
-async function ensureSupabaseAdminUser(email: string, password: string, role: string, username: string) {
-  const { error } = await supabaseAdmin.auth.admin.createUser({
-    email,
-    password,
-    email_confirm: true,
-    app_metadata: { role, username, app: "ather-admin" },
-  });
-
-  if (!error) return;
-
-  const alreadyExists =
-    error.message?.toLowerCase().includes("already") ||
-    error.status === 422;
-
-  if (!alreadyExists) {
-    throw error;
-  }
-
-  const { data, error: listError } = await supabaseAdmin.auth.admin.listUsers({
-    page: 1,
-    perPage: 1000,
-  });
-  if (listError) throw listError;
-
-  const existing = data.users.find((user) => user.email?.toLowerCase() === email.toLowerCase());
-  if (!existing) {
-    throw new Error("SUPABASE_ADMIN_USER_MISSING");
-  }
-
-  const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(existing.id, {
-    password,
-    app_metadata: { role, username, app: "ather-admin" },
-  });
-  if (updateError) throw updateError;
 }
 
 export async function adminSignIn(identifier: string, password: string) {
