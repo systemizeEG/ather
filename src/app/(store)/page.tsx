@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { prisma } from "@/lib/prisma";
+import { listFeaturedProducts, listLiveCategories } from "@/lib/catalog";
 import { cookies } from "next/headers";
 import { getTranslation, Locale } from "@/lib/dictionaries";
 import { ProductCard } from "@/components/product/ProductCard";
@@ -21,17 +21,8 @@ export default async function HomePage() {
   const t = getTranslation(locale);
 
   const [featuredProducts, liveCategories] = await Promise.all([
-    prisma.product.findMany({
-      where: { isFeatured: true, status: "ACTIVE" },
-      include: { category: true },
-      take: 6,
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.category.findMany({
-      where: { isActive: true, slug: { not: "uncategorized" } },
-      orderBy: { name: "asc" },
-      take: 4,
-    }),
+    listFeaturedProducts(6),
+    listLiveCategories(4),
   ]);
 
   const rooms =

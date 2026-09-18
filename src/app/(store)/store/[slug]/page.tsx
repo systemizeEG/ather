@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { getProductBySlug, listRelatedProducts } from "@/lib/catalog";
 import { notFound } from "next/navigation";
 import { StoreImage } from "@/components/ui/StoreImage";
 import { PageTransition } from "@/components/ui/MotionWrapper";
@@ -13,30 +13,13 @@ export default async function ProductDetailsPage(props: { params: Promise<{ slug
   const params = await props.params;
   const slugDecoded = decodeURIComponent(params.slug);
 
-  const product = await prisma.product.findUnique({
-    where: { slug: slugDecoded },
-    include: {
-      category: true,
-      packages: {
-        where: { isActive: true },
-        orderBy: { quantity: "asc" },
-      },
-    },
-  });
+  const product = await getProductBySlug(slugDecoded);
 
   if (!product || product.status !== "ACTIVE") {
     notFound();
   }
 
-  const relatedProducts = await prisma.product.findMany({
-    where: {
-      categoryId: product.categoryId || undefined,
-      id: { not: product.id },
-      status: "ACTIVE",
-    },
-    include: { category: true },
-    take: 3,
-  });
+  const relatedProducts = await listRelatedProducts(product.id, product.categoryId, 3);
 
   let features: string[] = [];
   try {

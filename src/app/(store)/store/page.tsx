@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { listActiveCategories, listActiveProducts } from "@/lib/catalog";
 import Link from "next/link";
 import { PageTransition, FadeIn } from "@/components/ui/MotionWrapper";
 import { ProductCard } from "@/components/product/ProductCard";
@@ -15,27 +15,10 @@ export default async function StorePage({
   searchParams: Promise<{ q?: string; category?: string }>;
 }) {
   const { q, category } = await searchParams;
-  const categories = await prisma.category.findMany({
-    where: { isActive: true },
-    orderBy: { name: "asc" },
-  });
-
-  const products = await prisma.product.findMany({
-    where: {
-      status: "ACTIVE",
-      ...(category ? { category: { slug: category, isActive: true } } : {}),
-      ...(q
-        ? {
-            OR: [
-              { title: { contains: q, mode: "insensitive" } },
-              { shortDescription: { contains: q, mode: "insensitive" } },
-            ],
-          }
-        : {}),
-    },
-    include: { category: true },
-    orderBy: { createdAt: "desc" },
-  });
+  const [categories, products] = await Promise.all([
+    listActiveCategories(),
+    listActiveProducts({ q, category }),
+  ]);
 
   return (
     <PageTransition>
