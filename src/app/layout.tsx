@@ -6,6 +6,7 @@ import { TranslationProvider } from "@/components/TranslationProvider";
 import { cookies } from "next/headers";
 import { Locale } from "@/lib/dictionaries";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { Analytics } from "@vercel/analytics/next";
 import {
   SITE_DESCRIPTION,
   SITE_NAME,
@@ -118,6 +119,7 @@ export default async function RootLayout({
           <Providers>{children}</Providers>
         </TranslationProvider>
         <SpeedInsights />
+        <Analytics />
       </body>
     </html>
   );
