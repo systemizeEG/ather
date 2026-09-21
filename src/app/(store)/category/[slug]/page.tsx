@@ -6,20 +6,32 @@ import { ProductCard } from "@/components/product/ProductCard";
 import { getRequestLocale } from "@/lib/locale";
 import { getTranslation } from "@/lib/dictionaries";
 import { localizeCategoryName, tx } from "@/lib/catalog-i18n";
+import { encodePathSegment, indexablePage } from "@/lib/seo";
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
 
-export async function generateMetadata(props: { params: Promise<{ slug: string }> }) {
+export async function generateMetadata(props: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
   const { slug } = await props.params;
   const locale = await getRequestLocale();
   const t = getTranslation(locale);
+  const slugDecoded = decodeURIComponent(slug);
   const category = await prisma.category.findUnique({
-    where: { slug: decodeURIComponent(slug) },
+    where: { slug: slugDecoded },
   });
   const name = localizeCategoryName(locale, category?.slug, category?.name);
+  if (!category || !category.isActive) {
+    return {
+      title: name || t.store.categoryFallback,
+      robots: { index: false, follow: false },
+    };
+  }
   return {
     title: name || t.store.categoryFallback,
-    description: tx(locale, category?.description) || `${t.store.categoryKicker} ${name || ""}`,
+    description: tx(locale, category.description) || `${t.store.categoryKicker} ${name || ""}`,
+    ...indexablePage(`/category/${encodePathSegment(category.slug)}`),
   };
 }
 

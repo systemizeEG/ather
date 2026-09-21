@@ -28,10 +28,12 @@ export function ProductCard({
   product,
   index = 0,
   locale: localeProp,
+  animate = true,
 }: {
   product: ProductCardProduct;
   index?: number;
   locale?: Locale;
+  animate?: boolean;
 }) {
   const translation = useTranslation();
   const locale = translation.locale || localeProp || "ar";
@@ -53,9 +55,8 @@ export function ProductCard({
     });
   };
 
-  return (
-    <FadeIn delay={0.1 * (index % 3)}>
-      <Link href={`/store/${product.slug}`} className="block group h-full">
+  const card = (
+    <Link href={`/store/${encodeURIComponent(product.slug.trim())}`} className="block group h-full">
         <div className="treasure-frame rounded-3xl overflow-hidden h-full flex flex-col transition-transform duration-300 group-hover:-translate-y-1">
           <CornerMarks />
           <div className="aspect-[4/5] relative velvet-well overflow-hidden m-[6px] rounded-[1.15rem]">
@@ -74,11 +75,6 @@ export function ProductCard({
               {product.isPopular && (
                 <div className="bg-gradient-to-b from-gold to-gold-deep text-truffle text-xs font-bold px-3 py-1 rounded-full shadow-sm">
                   {t.product.popular}
-                </div>
-              )}
-              {product.deliveryType === "INSTANT" && (
-                <div className="bg-powder text-truffle text-xs font-bold px-3 py-1 rounded-full shadow-sm">
-                  {t.product.fastShipping}
                 </div>
               )}
             </div>
@@ -121,6 +117,8 @@ export function ProductCard({
           </div>
         </div>
       </Link>
-    </FadeIn>
   );
+
+  if (!animate) return card;
+  return <FadeIn delay={0.1 * (index % 3)}>{card}</FadeIn>;
 }

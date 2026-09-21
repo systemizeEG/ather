@@ -27,14 +27,13 @@ export const dictionaries = {
       closeMenu: "إغلاق القائمة",
     },
     home: {
-      heroBadge: "خزينة مختارة من الكنوز",
-      heroTitle1: "افتح",
-      heroTitleHighlight: "الخزينة",
-      heroTitle2: "واختر أثرك",
-      heroDescription:
-        "كنوز من المجوهرات والحقائب والإكسسوارات — تُحفظ كما تُحفظ النفائس، وتُختار لتترك أثراً يدوم.",
-      browseProducts: "استكشف الكنوز",
-      howItWorks: "كيف تُفتح الخزينة؟",
+      heroBadge: "أثر",
+      heroTitle1: "",
+      heroTitleHighlight: "اترك أثراً",
+      heroTitle2: "",
+      heroDescription: "نصنع قطعاً تترك أثراً، تفصيلة يدوية في كل مرة.",
+      browseProducts: "الأقسام",
+      howItWorks: "الأسئلة",
       whyChooseUs: "لماذا خزينة أثر؟",
       whyChooseUsDesc:
         "كل قطعة تُعامل ككنز: تُختار ببطء، تُغلّف كهدية ملكية، وتصل إليك بعناية الخزينة.",
@@ -125,7 +124,7 @@ export const dictionaries = {
       methodInstapay: "InstaPay",
       methodInstapayHint: "حوّل الآن وأرفق صورة الإيصال",
       methodCod: "الدفع عند الاستلام",
-      methodCodHint: "ادفع نقداً عند استلام الطلب",
+      methodCodHint: "ادفع نقداً عند استلام الطلب — القاهرة والجيزة فقط",
       payTitle: "الدفع عبر InstaPay",
       payDesc: "يرجى تحويل المبلغ المطلوب إلى الحساب التالي وإرفاق صورة الإيصال (سكرين شوت).",
       orderId: "رقم الطلب (للمراجعة)",
@@ -143,7 +142,7 @@ export const dictionaries = {
       successTitle: "تم استلام طلبك بنجاح!",
       successDesc: "جاري مراجعة الدفع الآن.",
       codTitle: "الدفع عند الاستلام",
-      codDesc: "ادفع المبلغ نقداً لمندوب التوصيل عند استلام طلبك.",
+      codDesc: "ادفع المبلغ نقداً لمندوب التوصيل عند استلام طلبك. التوصيل متاح داخل القاهرة والجيزة فقط.",
       address: "عنوان التوصيل",
       addressPlaceholder: "المدينة، المنطقة، الشارع، علامة مميزة",
       addressHint: "نحتاج العنوان لتوصيل الطلب والدفع عند الباب.",
@@ -197,7 +196,7 @@ export const dictionaries = {
     },
     faq: {
       title: "الأسئلة الشائعة",
-      description: "إجابات هادئة لكل ما يخص التسوق مع أثر.",
+      description: "إجابات لكل ما يخص التسوق مع أثر.",
       search: "ابحث عن سؤالك...",
       items: [
         {
@@ -206,19 +205,31 @@ export const dictionaries = {
         },
         {
           q: "متى يصل طلبي؟",
-          a: "بعد تأكيد الدفع نجهّز القطعة بتغليف فاخر. الشحن داخل مصر عادة خلال 1 إلى 4 أيام عمل حسب المدينة. القطع المميزة بـ «شحن سريع» تُخرَج في أقرب شحنة.",
+          a: "بعد تأكيد الدفع نجهّز القطعة بتغليف فاخر. التوصيل داخل القاهرة والجيزة خلال 4 إلى 6 أيام عمل.",
         },
         {
           q: "هل يمكنني الإرجاع أو الاستبدال؟",
-          a: "نعم، يمكن مراجعة طلب الاستبدال أو الإرجاع خلال 48 ساعة من الاستلام إذا كانت القطعة بحالتها الأصلية مع التغليف. تواصلي مع الدعم عبر واتساب لتسهيل الإجراء.",
+          a: "يرجى فحص الطلب والمندوب ما زال عند بابك. إذا لم تكوني راضية، أعيدي الطلب للمندوب فوراً — تُحاسبين فقط على رسوم التوصيل. بعد مغادرة المندوب، جميع المبيعات نهائية ولا يُقبل الإرجاع أو الاستبدال.",
+        },
+        {
+          q: "من أي معادن تُصنع القطع؟",
+          a: "نصنع مجوهراتنا من النحاس (لون فضي مصقول أو طبيعي) والألومنيوم — لا نبيع فضة أو ذهب صلب. هذه المعادن تصدأ أو تغمق طبيعياً مع الوقت عند التعرض للماء، ماء البحر، الرطوبة، الهواء، العطور، أو الكحول.",
+        },
+        {
+          q: "ماذا تعني مستويات التجربة على المنتجات؟",
+          a: "مستوى التجربة موضح بوضوح في صفحة كل منتج (مثل: تجربة صعبة). لسنا مسؤولين إذا اشترى مبتدئ طقماً متقدماً ووجد صعوبة في إكماله.",
+        },
+        {
+          q: "هل يوجد مقدم للباقات والورش؟",
+          a: "يُطلب دفع مقدم 50% لتأكيد كل الطلبات في قسم الباقات وجميع حجوزات الورش. رسائل تأكيد الورشة تُرسل فقط بعد استلام المقدم.",
         },
         {
           q: "ماذا لو حوّلت مبلغاً خاطئاً؟",
           a: "حوّلي المبلغ المطابق للإجمالي لتسريع المراجعة. إن حدث خطأ، تواصلي مع الدعم مع إرفاق الإيصال ورقم الطلب.",
         },
         {
-          q: "هل القطع أصلية؟",
-          a: "كل قطعة في أثر مختارة بعناية من خامات وجودة نعرضها بوضوح في صفحة المنتج. إن لم تطابق الوصف، فريقنا يتحمل المسؤولية.",
+          q: "كيف أتواصل بخصوص شكوى أو تعويض؟",
+          a: "لأي مشكلة في الطلب أو طلب تعويض، تواصلي مع خدمة العملاء على +20 10 41 663 533. سياساتنا موضحة أيضاً على صفحة إنستجرام — يرجى مراجعتها قبل الطلب.",
         },
       ],
     },
@@ -231,8 +242,8 @@ export const dictionaries = {
       emailTitle: "البريد الإلكتروني",
       emailDesc: "للشراكات أو الاستفسارات التجارية، راسلينا عبر البريد.",
       emailCta: "إرسال بريد",
-      shippingTitle: "شحن لكل مصر",
-      shippingDesc: "متجر إلكتروني بتغليف فاخر وشحن موثوق إلى جميع المحافظات.",
+      shippingTitle: "شحن للقاهرة والجيزة",
+      shippingDesc: "متجر إلكتروني بتغليف فاخر وشحن موثوق داخل القاهرة والجيزة.",
       online: "أونلاين",
     },
     track: {
@@ -642,14 +653,13 @@ export const dictionaries = {
       closeMenu: "Close menu",
     },
     home: {
-      heroBadge: "A curated vault of treasures",
-      heroTitle1: "Open the",
-      heroTitleHighlight: "vault",
-      heroTitle2: "and leave a trace",
-      heroDescription:
-        "Jewelry, bags, and refined accessories kept like treasures — chosen slowly, packed like a gift, made to leave a mark.",
-      browseProducts: "Explore the treasures",
-      howItWorks: "How the vault works",
+      heroBadge: "Athar",
+      heroTitle1: "",
+      heroTitleHighlight: "Leave a mark",
+      heroTitle2: "",
+      heroDescription: "Creating pieces that leave a mark, one handmade detail at a time.",
+      browseProducts: "Categories",
+      howItWorks: "Q&A",
       whyChooseUs: "Why the Ather vault?",
       whyChooseUsDesc:
         "Every piece is treated as treasure: chosen slowly, wrapped like a royal gift, and guarded until it reaches you.",
@@ -740,7 +750,7 @@ export const dictionaries = {
       methodInstapay: "InstaPay",
       methodInstapayHint: "Transfer now and attach a receipt screenshot",
       methodCod: "Cash on delivery",
-      methodCodHint: "Pay cash when the order arrives",
+      methodCodHint: "Pay cash when the order arrives — Cairo and Giza only",
       payTitle: "Pay with InstaPay",
       payDesc: "Transfer the amount to the account below and attach a screenshot of the receipt.",
       orderId: "Order ID (for review)",
@@ -758,7 +768,7 @@ export const dictionaries = {
       successTitle: "Your order was received!",
       successDesc: "Payment is now under review.",
       codTitle: "Cash on delivery",
-      codDesc: "Pay the amount in cash to the courier when your order arrives.",
+      codDesc: "Pay the amount in cash to the courier when your order arrives. Delivery is available in Cairo and Giza only.",
       address: "Delivery address",
       addressPlaceholder: "City, area, street, a nearby landmark",
       addressHint: "We need your address to deliver the order and collect cash at the door.",
@@ -812,7 +822,7 @@ export const dictionaries = {
     },
     faq: {
       title: "FAQ",
-      description: "Calm answers for everything about shopping with Ather.",
+      description: "Answers for everything about shopping with Athar.",
       search: "Search a question...",
       items: [
         {
@@ -821,19 +831,31 @@ export const dictionaries = {
         },
         {
           q: "When will my order arrive?",
-          a: "After payment is confirmed we pack the piece carefully. Shipping inside Egypt usually takes 1–4 business days depending on the city. Items marked “Fast shipping” leave with the next dispatch.",
+          a: "After payment is confirmed we pack the piece carefully. Delivery in Cairo and Giza takes 4–6 business days.",
         },
         {
           q: "Can I return or exchange?",
-          a: "Yes. You can request a return or exchange within 48 hours of delivery if the piece is unused and in its original packaging. Message support on WhatsApp and we’ll help.",
+          a: "Please inspect your order while the courier is at your door. If you are not satisfied, hand the order back to the courier immediately — you will only be charged the delivery fee. Once the courier leaves your doorstep, all sales are final, and no returns or exchanges are accepted.",
+        },
+        {
+          q: "What metals do you use?",
+          a: "We craft our jewelry using copper (polished silver-color or natural) and aluminum — we do not sell solid silver or gold. These metals naturally tarnish or darken over time when exposed to water, seawater, humidity, air, perfumes, or alcohol.",
+        },
+        {
+          q: "What do experience levels mean?",
+          a: "Experience levels are clearly marked on each product page (e.g., Hard Experience). We are not responsible if a beginner purchases an advanced kit and finds it difficult to complete.",
+        },
+        {
+          q: "Is a deposit required for packages and workshops?",
+          a: "A 50% deposit is required to confirm all orders in the Packages category and all Workshop bookings. Workshop confirmation emails are sent only after the deposit is received.",
         },
         {
           q: "What if I transferred the wrong amount?",
           a: "Please transfer the exact total to speed up review. If a mistake happens, contact support with the receipt and order ID.",
         },
         {
-          q: "Are the pieces authentic?",
-          a: "Every Ather piece is carefully chosen, with materials and quality shown clearly on the product page. If it doesn’t match the description, our team takes responsibility.",
+          q: "How do I file a complaint or request compensation?",
+          a: "For any order issues or compensation requests, please contact customer service at +20 10 41 663 533. Our policies are also highlighted on our Instagram page — please review them before placing your order.",
         },
       ],
     },
@@ -846,8 +868,8 @@ export const dictionaries = {
       emailTitle: "Email",
       emailDesc: "For partnerships or business inquiries, write to us by email.",
       emailCta: "Send email",
-      shippingTitle: "Shipping across Egypt",
-      shippingDesc: "An online store with luxury packaging and reliable delivery to every governorate.",
+      shippingTitle: "Shipping in Cairo & Giza",
+      shippingDesc: "An online store with luxury packaging and reliable delivery in Cairo and Giza.",
       online: "Online",
     },
     track: {

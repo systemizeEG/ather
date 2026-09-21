@@ -2,18 +2,28 @@ import Link from "next/link";
 import { listFeaturedProducts, listLiveCategories } from "@/lib/catalog";
 import { getTranslation } from "@/lib/dictionaries";
 import { ProductCard } from "@/components/product/ProductCard";
-import { PageTransition, FadeIn } from "@/components/ui/MotionWrapper";
 import { HeroSection } from "@/components/home/HeroSection";
 import { getRequestLocale } from "@/lib/locale";
 import { localizeCategoryName } from "@/lib/catalog-i18n";
+import { SITE_DESCRIPTION, SITE_TITLE } from "@/lib/constants";
+import { indexablePage } from "@/lib/seo";
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: { absolute: SITE_TITLE },
+  description: SITE_DESCRIPTION,
+  ...indexablePage("/"),
+};
 
 const fallbackRooms = [
   { ar: "مجوهرات", en: "Jewelry", note: "01", href: "/store" },
   { ar: "حقائب", en: "Bags", note: "02", href: "/store" },
   { ar: "ساعات", en: "Watches", note: "03", href: "/store" },
   { ar: "هدايا", en: "Gifts", note: "04", href: "/store" },
+  { ar: "أساور", en: "Bracelets", note: "05", href: "/store" },
+  { ar: "سلاسل", en: "Necklaces", note: "06", href: "/store" },
 ];
 
 export default async function HomePage() {
@@ -22,7 +32,7 @@ export default async function HomePage() {
 
   const [featuredProducts, liveCategories] = await Promise.all([
     listFeaturedProducts(6),
-    listLiveCategories(4),
+    listLiveCategories(6),
   ]);
 
   const rooms =
@@ -36,7 +46,7 @@ export default async function HomePage() {
       : fallbackRooms;
 
   return (
-    <PageTransition>
+    <div className="w-full min-h-screen">
       <HeroSection
         locale={locale}
         copy={{
@@ -50,8 +60,8 @@ export default async function HomePage() {
         }}
       />
 
-      <section className="bg-velvet">
-        <div className="grid grid-cols-2 lg:grid-cols-4">
+      <section id="categories" className="bg-velvet scroll-mt-24">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
           {rooms.map((room) => (
             <Link
               key={room.note}
@@ -69,7 +79,7 @@ export default async function HomePage() {
 
       <section id="lookbook" className="bg-pearl py-20 md:py-24 scroll-mt-24">
         <div className="container mx-auto px-4">
-          <FadeIn className="flex justify-between items-end mb-12">
+          <div className="flex justify-between items-end mb-12">
             <div>
               <p className="text-[11px] tracking-[0.35em] uppercase text-gold mb-3">{t.home.lookbook}</p>
               <h2 className="font-display text-3xl md:text-5xl mb-3">{t.home.featuredProducts}</h2>
@@ -81,12 +91,12 @@ export default async function HomePage() {
             >
               {t.home.viewAll}
             </Link>
-          </FadeIn>
+          </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {featuredProducts.length > 0 ? (
               featuredProducts.map((product, i) => (
-                <ProductCard key={product.id} product={product} index={i} locale={locale} />
+                <ProductCard key={product.id} product={product} index={i} locale={locale} animate={false} />
               ))
             ) : (
               <div className="col-span-full treasure-frame rounded-3xl py-16 text-center text-muted-foreground">
@@ -119,6 +129,6 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
-    </PageTransition>
+    </div>
   );
 }

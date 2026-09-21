@@ -9,7 +9,8 @@ import { AddToCartButton } from "./AddToCartButton";
 import { getRequestLocale } from "@/lib/locale";
 import { getTranslation } from "@/lib/dictionaries";
 import { brandWord, localizeFeatures, localizeProduct } from "@/lib/catalog-i18n";
-import { SITE_NAME, SITE_OG_IMAGE, SITE_URL } from "@/lib/constants";
+import { SITE_NAME, SITE_OG_IMAGE } from "@/lib/constants";
+import { encodePathSegment, indexablePage } from "@/lib/seo";
 import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
@@ -21,19 +22,20 @@ export async function generateMetadata(props: {
   const locale = await getRequestLocale();
   const raw = await getProductBySlug(decodeURIComponent(slug));
   if (!raw || raw.status !== "ACTIVE") {
-    return { title: SITE_NAME };
+    return { title: SITE_NAME, robots: { index: false, follow: false } };
   }
   const product = localizeProduct(locale, raw);
   const description = product.shortDescription || product.fullDescription || SITE_NAME;
   const image = product.image || SITE_OG_IMAGE;
-  const url = `${SITE_URL}/store/${product.slug}`;
+  const seo = indexablePage(`/store/${encodePathSegment(product.slug)}`);
   return {
     title: product.title,
     description,
+    ...seo,
     openGraph: {
+      ...seo.openGraph,
       title: `${product.title} | ${SITE_NAME}`,
       description,
-      url,
       siteName: SITE_NAME,
       type: "website",
       images: [
@@ -49,7 +51,6 @@ export async function generateMetadata(props: {
       description,
       images: [image],
     },
-    alternates: { canonical: url },
   };
 }
 
@@ -70,7 +71,6 @@ export default async function ProductDetailsPage(props: { params: Promise<{ slug
   const BackIcon = locale === "ar" ? ArrowRight : ArrowLeft;
   const category =
     product.category && typeof product.category === "object" ? product.category : null;
-  const packages = Array.isArray(product.packages) ? product.packages : [];
 
   let features: string[] = [];
   try {
@@ -147,14 +147,6 @@ export default async function ProductDetailsPage(props: { params: Promise<{ slug
                   ? { name: category.name || "", slug: category.slug || "" }
                   : null,
               }}
-              packages={packages.map((pkg) => ({
-                id: pkg.id,
-                name: pkg.name,
-                description: pkg.description,
-                quantity: pkg.quantity,
-                price: pkg.price,
-                compareAtPrice: pkg.compareAtPrice,
-              }))}
             />
 
             <div className="mt-6 flex flex-wrap gap-2 text-xs text-muted-foreground">
@@ -165,11 +157,6 @@ export default async function ProductDetailsPage(props: { params: Promise<{ slug
               {product.duration && (
                 <span className="inline-flex items-center gap-1.5 bg-card border border-gold/20 rounded-full px-3 py-1.5">
                   {t.product.duration}: {product.duration}
-                </span>
-              )}
-              {product.deliveryType === "INSTANT" && (
-                <span className="inline-flex items-center gap-1.5 bg-card border border-gold/20 rounded-full px-3 py-1.5">
-                  {t.product.fastShipping}
                 </span>
               )}
             </div>

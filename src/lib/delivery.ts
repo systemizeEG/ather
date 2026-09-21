@@ -1,4 +1,4 @@
-import { EGYPT_COUNTRY, governorateLabel } from "@/lib/egypt";
+import { EGYPT_COUNTRY, governorateLabel, isAllowedGovernorate } from "@/lib/egypt";
 
 export type DeliveryDetails = {
   firstName: string;
@@ -26,7 +26,7 @@ export function isDeliveryComplete(details: DeliveryDetails) {
       details.lastName.trim() &&
       details.address.trim() &&
       details.city.trim() &&
-      details.governorate.trim() &&
+      isAllowedGovernorate(details.governorate) &&
       details.phone.trim()
   );
 }

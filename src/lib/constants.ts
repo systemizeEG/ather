@@ -32,5 +32,5 @@ export const SITE_URL = "https://atharexperience.store";
 export const SITE_NAME = "أثر | Ather";
 export const SITE_TITLE = "أثر | Ather — إكسسوارات تترك أثراً";
 export const SITE_DESCRIPTION =
-  "متجر أثر لإكسسوارات فاخرة مختارة بعناية. مجوهرات، حقائب، وهدايا بتغليف أنيق وشحن موثوق داخل مصر.";
+  "متجر أثر لإكسسوارات فاخرة مختارة بعناية. مجوهرات وقطع يدوية بتغليف أنيق وشحن موثوق داخل القاهرة والجيزة.";
 export const SITE_OG_IMAGE = "/og.png";

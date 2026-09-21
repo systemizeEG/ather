@@ -59,17 +59,48 @@ export async function listActiveProducts(opts?: { q?: string; category?: string 
 }
 
 export async function getProductBySlug(slug: string) {
+  const include = {
+    category: true,
+    packages: {
+      where: { isActive: true },
+      orderBy: { quantity: "asc" as const },
+    },
+  };
+
+  const candidates = Array.from(
+    new Set(
+      [
+        slug,
+        slug.trim(),
+        slug.trim().toLowerCase().replace(/\s+/g, "-"),
+        slug.trim().replace(/\s+/g, "-"),
+      ].filter(Boolean)
+    )
+  );
+
   try {
-    return await prisma.product.findUnique({
-      where: { slug },
-      include: {
-        category: true,
-        packages: {
-          where: { isActive: true },
-          orderBy: { quantity: "asc" },
-        },
+    for (const candidate of candidates) {
+      const bySlug = await prisma.product.findUnique({
+        where: { slug: candidate },
+        include,
+      });
+      if (bySlug) return bySlug;
+    }
+
+    const trimmed = slug.trim();
+    const byLooseMatch = await prisma.product.findFirst({
+      where: {
+        status: "ACTIVE",
+        OR: [
+          { slug: { equals: trimmed, mode: "insensitive" } },
+          { slug: { contains: trimmed, mode: "insensitive" } },
+          { title: { equals: trimmed, mode: "insensitive" } },
+          { title: { contains: trimmed, mode: "insensitive" } },
+        ],
       },
+      include,
     });
+    return byLooseMatch;
   } catch (error) {
     console.error("getProductBySlug", error);
     return null;

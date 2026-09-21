@@ -5,15 +5,24 @@ import { ProductCard } from "@/components/product/ProductCard";
 import { getRequestLocale } from "@/lib/locale";
 import { getTranslation } from "@/lib/dictionaries";
 import { localizeCategoryName } from "@/lib/catalog-i18n";
+import { indexablePage } from "@/lib/seo";
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
 
-export async function generateMetadata() {
+export async function generateMetadata(props: {
+  searchParams: Promise<{ q?: string; category?: string }>;
+}): Promise<Metadata> {
   const locale = await getRequestLocale();
   const t = getTranslation(locale);
+  const { q } = await props.searchParams;
+  const isSearch = Boolean(q?.trim());
+
   return {
     title: t.store.title,
     description: t.store.description,
+    ...(isSearch ? { robots: { index: false, follow: true } } : {}),
+    ...indexablePage("/store"),
   };
 }
 

@@ -4,15 +4,18 @@ import { Input } from "@/components/ui/Input";
 import { GoldRule } from "@/components/ui/Treasure";
 import { getRequestLocale } from "@/lib/locale";
 import { getTranslation } from "@/lib/dictionaries";
+import { indexablePage } from "@/lib/seo";
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
 
-export async function generateMetadata() {
+export async function generateMetadata(): Promise<Metadata> {
   const locale = await getRequestLocale();
   const t = getTranslation(locale);
   return {
     title: t.faq.title,
     description: t.faq.description,
+    ...indexablePage("/faq"),
   };
 }
 

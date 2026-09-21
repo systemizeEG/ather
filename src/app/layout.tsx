@@ -62,7 +62,6 @@ export const metadata: Metadata = {
   openGraph: {
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,
-    url: SITE_URL,
     siteName: SITE_NAME,
     images: [ogImage],
     locale: "ar_EG",
@@ -75,9 +74,6 @@ export const metadata: Metadata = {
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,
     images: [ogImage.url],
-  },
-  alternates: {
-    canonical: SITE_URL,
   },
 };
 
