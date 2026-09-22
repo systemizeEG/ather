@@ -147,6 +147,14 @@ export default async function ProductDetailsPage(props: { params: Promise<{ slug
                   ? { name: category.name || "", slug: category.slug || "" }
                   : null,
               }}
+              packages={(product.packages ?? []).map((pkg) => ({
+                id: pkg.id,
+                name: pkg.name,
+                description: pkg.description,
+                quantity: pkg.quantity,
+                price: pkg.price,
+                compareAtPrice: pkg.compareAtPrice,
+              }))}
             />
 
             <div className="mt-6 flex flex-wrap gap-2 text-xs text-muted-foreground">

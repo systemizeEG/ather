@@ -132,6 +132,11 @@ export function AddToCartButton({
                       <div className="min-w-0">
                         <div className="font-bold">{option.name}</div>
                         <div className="text-xs text-muted-foreground">{option.hint}</div>
+                        {option.pkg?.description ? (
+                          <div className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                            {tx(locale, option.pkg.description) || option.pkg.description}
+                          </div>
+                        ) : null}
                       </div>
                     </div>
                     <div className="text-end shrink-0">
